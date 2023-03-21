@@ -10,7 +10,6 @@ else
     exit
 fi
 
-# Get distro
 get_distro() {
     if [ ! -f /etc/os-release ]; then
         echo "ERROR: /etc/os-release does not exist."
@@ -22,7 +21,6 @@ get_distro() {
         exit 1
     fi
 }
-
 
 install_packages() {
     case "$os_id" in 
@@ -50,7 +48,7 @@ install_packages() {
     esac  
 }
 
-setup_zsh_xdg() {
+zshenv_xdg() {
 cat << 'EOF' | sudo tee /etc/zsh/zshenv  
 if [[ -z "$PATH" || "$PATH" == "/bin:/usr/bin"]]  
 then  
@@ -69,6 +67,23 @@ export XDG_CONFIG_DIRS="/etc/xdg"
 # ZSH  
 export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
 EOF  
+}
+
+mkdir_xdg() {
+    mkdir -p '/root/.cache' '/root/.config' '/root/.local/share' '/root/.local/state'
+    chown root:root '/root/.cache' '/root/.config' '/root/.local/share' '/root/.local/state'
+
+    for d in /home/*
+
+    for user_home in /home/*; do
+    username=$(basename "$user_home")
+    
+    # Create XDG directories
+    $SUDO mkdir -p "$user_home/.cache" "$user_home/.config" "$user_home/.local/state" "$user_home/.local/share"
+    
+    # Change ownership of XDG directories to user
+    $SUDO chown -R "$username:$username" "$user_home/.cache" "$user_home/.config" "$user_home/.local/state" "$user_home/.local/share"
+done
 }
 
 read_input() {
