@@ -1,0 +1,49 @@
+- defaults:
+    link:
+      relink: true
+
+- clean: ["~"]
+
+- link:
+    ~/.dotfiles: ""
+
+- shell:
+    - sudo chsh -s $(which zsh) $(whoami) # Set zsh as default shell
+    - sudo bash ~/.dotfiles/scripts/pkg_install.sh # Install packages
+    - mkdir -p ~/.cache ~/.config ~/.local/bin ~/.local/share ~/.local/state # Create XDG directoires
+    - mkdir -p ~/.config/zsh # create zsh dir
+    - bash ~/.dotfiles/scripts/setup_zsh.sh # Install omz and zsh plugins
+
+- link:
+    ~/.config/vim/vimrc:
+      create: true
+      path: vim/vimrc
+    ~/.config/zsh/.zshrc:
+      create: true
+      path: zsh/.zshrc
+    ~/.local/share/fonts/:
+      create: true
+      glob: true
+      path: fonts/*
+
+- shell:
+    - source ~/.config/zsh/.zshrc
+    - [git submodule update --init --recursive, Installing submodules]
+
+- defaults:
+    link:
+      relink: true
+
+- clean: ['~']
+
+- link:
+    ~/.tmux.conf: tmux.conf
+    ~/.vim: vim
+    ~/.vimrc: vimrc
+
+- create:
+    - ~/downloads
+    - ~/.vim/undo-history
+
+- shell:
+  - [git submodule update --init --recursive, Installing submodules]

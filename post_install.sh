@@ -11,42 +11,53 @@ else
 fi
 
 # Get distro
-if [ ! -f /etc/os-release ]; then
-    echo "ERROR: /etc/os-release does not exist."
-    exit 1
-fi
-os_id=$(grep "^ID=" /etc/os-release | cut -d= -f2 | awk '{print tolower($0)}')
-if [ -z "$os_id" ]; then
-    echo "ERROR: ID field not found in /etc/os-release."
-    exit 1
-fi
-
-# Install packages
-case "$os_id" in
-    "debian" | "ubuntu")
-        packages="git zsh vim locales"
-        $SUDO apt update
-        $SUDO apt install -y $packages
-        ;;
-    "centos" | "fedora")
-        ;;
-    "arch")
-        ;;
-    "alpine")
-        ;;
-    *)
-        echo "Error: Unable to detect distro."
+get_distro() {
+    if [ ! -f /etc/os-release ]; then
+        echo "ERROR: /etc/os-release does not exist."
         exit 1
-        ;;
-esac
+    fi
+    os_id=$(grep "^ID=" /etc/os-release | cut -d= -f2 | awk '{print tolower($0)}')
+    if [ -z "$os_id" ]; then
+        echo "ERROR: ID field not found in /etc/os-release."
+        exit 1
+    fi
+}
 
-cat << 'EOF' | sudo tee /etc/zsh/zshenv
-if [[ -z "$PATH" || "$PATH" == "/bin:/usr/bin" ]]
-then
+
+install_packages() {
+    case "$os_id" in 
+        "debian") 
+            packages="git zsh vim locales software-properties-common" 
+            $SUDO apt update 
+            $SUDO apt install -y $packages 
+            $SUDO apt-add-repository contrib && $SUDO apt-add-repository non-free 
+            ;; 
+        "ubuntu") 
+            packages="git zsh vim locales" 
+            $SUDO apt update 
+            $SUDO apt install -y $packages 
+            ;;  
+        "centos"| "fedora") ;;
+        "arch") ;;
+        "alpine")
+            packages="git zsh vim shadow"
+            $SUDO apk add -y $packages
+            ;;
+        *)
+            echo "Error: Unable to detect distro."
+            exit 1
+            ;;
+    esac  
+}
+
+setup_zsh_xdg() {
+cat << 'EOF' | sudo tee /etc/zsh/zshenv  
+if [[ -z "$PATH" || "$PATH" == "/bin:/usr/bin"]]  
+then  
         export PATH="/usr/local/bin:/usr/bin:/bin"
-fi
+fi  
 
-# XDG
+# XDG  
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_DATA_HOME="$HOME/.local/share"
@@ -55,13 +66,24 @@ export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_DATA_DIRS="/usr/local/share:/usr/share"
 export XDG_CONFIG_DIRS="/etc/xdg"
 
-# ZSH
+# ZSH  
 export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
-EOF
+EOF  
+}
 
-# Set locale options
-$SUDO locale-gen en_US.UTF-8 en_GB.UTF-8 sv_SE.UTF-8
-#$SUDO update-locale LANG=en_GB.UTF-8 LC_TIME=sv_SE.UTF-8
+read_input() {
+    read -p "$1 (y/n) " input_var   
+    input_var=$(echo "$input_var"| tr '[:upper:]' '[:lower:]') 
 
-# Set keyboard layout to Swedish
-# $SUDO sed -i 's/XKBLAYOUT=".*"/XKBLAYOUT="se"/g' /etc/default/keyboard
+    if [ "$input_var" = "y" ]; then   
+        return 0   
+     else   
+         return 1   
+     fi   
+}
+
+distro=$(get_distro)
+
+read_input "Do you want to install packages?" && install_packages
+
+read_input "Do you want to set up ZSH and XDG?" && setup_zsh_xdg
