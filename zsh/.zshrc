@@ -1,6 +1,8 @@
 # Env
 export ZSH="$ZDOTDIR/oh-my-zsh"
+export $ZSH_CUSTOM="$ZSH/custom"
 fpath+=($ZDOTDIR/pure)
+
 
 # OMZ
 ZSH_THEME=""
@@ -12,8 +14,8 @@ DISABLE_UPDATE_PROMPT=true
 # History
 if [ ! -d "${XDG_STATE_HOME}/zsh" ] ; then mkdir -p "${XDG_STATE_HOME}/zsh" ; fi
 HISTFILE="${XDG_STATE_HOME}/zsh/history"
-HISTSIZE=1000
-SAVEHIST=1000
+HISTSIZE=10000
+SAVEHIST=10000
 setopt appendhistory
 
 # Fix TC
@@ -28,11 +30,9 @@ zstyle ':completion:*' cache-path "${XDG_CACHE_HOME}/zsh/zcompcache"
 
 # Pure
 autoload -U promptinit; promptinit
-
 zstyle :prompt:pure:path color white
 zstyle ':prompt:pure:prompt:*' color cyan
 zstyle :prompt:pure:git:stash show yes
-
 prompt pure
 
 # Mod functions
@@ -45,10 +45,6 @@ else
         LC_COLLATE=C ls -h --group-directories-first --color=auto
     }
 fi
-
-# Vim
-export MYVIMRC='$XDG_CONFIG_HOME/vim/vimrc'
-export VIMINIT='source $MYVIMRC'
 
 # Alias
 if which exa >/dev/null; then

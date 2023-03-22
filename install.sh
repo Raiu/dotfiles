@@ -2,17 +2,18 @@
 
 set -e
 
+BASEDIR="$(cd "$(dirname "${0}")" && pwd)"
+
 DOTFILES_REPO=${DOTFILES_REPO:-Raiu/dotfiles}
 DOTFILES_REMOTE=${DOTFILES_REMOTE:-https://github.com/${REPO}.git}
 DOTFILES_BRANCH=${DOTFILES_BRANCH:-master}
 
 DOTFILES_LOCATION=${DOTFILES_LOCATION:-$HOME/.dotfiles}
 
-CONFIG="install.conf.yaml"
-DOTBOT_DIR=".dotbot"
-
+DOTBOT_DIR="$DOTFILES_LOCATION/.dotbot"
 DOTBOT_BIN="bin/dotbot"
-BASEDIR="$(cd "$(dirname "${0}")" && pwd)"
+CONFIG="install.conf.yaml"
+
 
 command_exists() {
     command -v "$@" >/dev/null 2>&1
@@ -37,7 +38,19 @@ if [ ! -d "$DOTFILES_LOCATION" ]; then
     git clone "$DOTFILES_REPO" "$DOTFILES_LOCATION"
 else
     echo "${DOTFILES_LOCATION} already exist, please delete before running this script"
+    exit 1
 fi
+
+cd "${BASEDIR}"
+git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
+#git submodule update --init --recursive "${DOTBOT_DIR}"
+git submodule update --init --recursive
+
+"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" -c "${CONFIG}" "${@}"
+
+# NOPASSWD Sudo
+echo "$USER ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee "/etc/sudoers.d/$USER" > /dev/null
+
 
 if command_exists zsh; then
     if [ -z "$ZSH_VERSION" ]; then
@@ -49,10 +62,3 @@ if command_exists zsh; then
         fi
     fi
 fi
-
-cd "${BASEDIR}"
-git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
-#git submodule update --init --recursive "${DOTBOT_DIR}"
-git submodule update --init --recursive
-
-"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" -c "${CONFIG}" "${@}"

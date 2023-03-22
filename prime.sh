@@ -11,7 +11,7 @@ else
 fi
 
 # Var
-PACKAGES_DEBIAN="git zsh vim locales software-properties-common"
+PACKAGES_DEBIAN="git zsh vim locales"
 PACKAGES_UBUNTU="git zsh vim locales"
 PACKAGES_RHEL=""
 PACKAGES_ALPINE="git zsh vim shadow"
@@ -21,44 +21,52 @@ get_distro() {
         echo "ERROR: /etc/os-release does not exist."
         exit 1
     fi
-    os_id=$(grep "^ID=" /etc/os-release | cut -d= -f2 | awk '{print tolower($0)}')
-    if [ -z "$os_id" ]; then
+    distro=$(grep "^ID=" /etc/os-release | cut -d= -f2 | awk '{print tolower($0)}')
+    if [ -z "$distro" ]; then
         echo "ERROR: ID field not found in /etc/os-release."
         exit 1
+    else
+        echo $distro
     fi
 }
 
 install_packages() {
-    disto=$1
-    case "$disto" in 
-        "debian") 
-            $SUDO apt update 
-            $SUDO apt install -y $PACKAGES_DEBIAN 
-            $SUDO apt-add-repository contrib && $SUDO apt-add-repository non-free 
-            ;; 
-        "ubuntu") 
-            $SUDO apt update 
-            $SUDO apt install -y $PACKAGES_UBUNTU 
-            ;;  
+    distro=$1
+    case "$distro" in
+        "debian")
+            $SUDO apt update
+            $SUDO apt install -y software-properties-common
+            $SUDO apt-add-repository -y contrib non-free
+            $SUDO apt upgrade -y
+            $SUDO apt install -y ${PACKAGES_DEBIAN}
+            $SUDO apt autoclean
+            ;;
+        "ubuntu")
+            $SUDO apt update
+            $SUDO add-apt-repository -y universe multiverse restricted
+            $SUDO apt upgrade -y
+            $SUDO apt install -y ${PACKAGES_UBUNTU}
+            $SUDO apt autoclean
+            ;;
         "centos"| "fedora")
             ;;
         "alpine")
-            $SUDO apk add -y $PACKAGES_ALPINE
+            $SUDO apk add -y ${PACKAGES_ALPINE}
             ;;
         *)
             echo "Error: Unable to detect distro."
             ;;
-    esac  
+    esac
 }
 
 zshenv_xdg() {
-cat << 'EOF' | sudo tee /etc/zsh/zshenv  
-if [[ -z "$PATH" || "$PATH" == "/bin:/usr/bin"]]  
-then  
+$SUDO tee /etc/zsh/zshenv > /dev/null << 'EOF'
+if [[ -z "$PATH" || "$PATH" == "/bin:/usr/bin" ]]
+then
         export PATH="/usr/local/bin:/usr/bin:/bin"
-fi  
+fi
 
-# XDG  
+# XDG
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_DATA_HOME="$HOME/.local/share"
@@ -67,14 +75,14 @@ export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_DATA_DIRS="/usr/local/share:/usr/share"
 export XDG_CONFIG_DIRS="/etc/xdg"
 
-# ZSH  
+# ZSH
 export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
-EOF  
+EOF
 }
 
 mkdir_xdg() {
-    mkdir -p '/root/.cache' '/root/.config' '/root/.local/share' '/root/.local/state'
-    chown root:root '/root/.cache' '/root/.config' '/root/.local/share' '/root/.local/state'
+    $SUDO mkdir -p '/root/.cache' '/root/.config' '/root/.local/share' '/root/.local/state'
+    $SUDO chown root:root '/root/.cache' '/root/.config' '/root/.local/share' '/root/.local/state'
     for user_home in /home/*; do
         username=$(basename "$user_home")
         $SUDO mkdir -p "$user_home/.cache" "$user_home/.config" "$user_home/.local/state" "$user_home/.local/share"
@@ -82,18 +90,8 @@ mkdir_xdg() {
     done
 }
 
-read_input() {
-    read -p "$1 (y/n) " input_var   
-    input_var=$(echo "$input_var"| tr '[:upper:]' '[:lower:]') 
-
-    if [ "$input_var" = "y" ]; then   
-        return 0   
-     else   
-         return 1   
-     fi   
-}
-
 distro=$(get_distro)
-
-read_input "Do you want to install packages?" && install_packages $distro
-read_input "Do you want to set up ZSH and XDG?" && zshenv_xdg
+echo $distro
+install_packages "$distro"
+zshenv_xdg
+mkdir_xdg
