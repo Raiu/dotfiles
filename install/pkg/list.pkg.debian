@@ -1,8 +1,12 @@
+apt-transport-https
 atool
+bash
 bat
 black
+ca-certificates
 command-not-found
 curl
+dirmngr
 dos2unix
 exa
 fd-find
@@ -10,8 +14,12 @@ fdupes
 fontconfig
 fzf
 git
+gnupg
+gnupg-agent
 htop
 iperf3
+locales
+lsb-release
 lsof
 ltrace
 moreutils
@@ -22,7 +30,9 @@ progress
 psmisc
 ripgrep
 rsync
+software-properties-common
 strace
+sudo
 tcpdump
 unar
 vim

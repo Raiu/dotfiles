@@ -1,5 +1,6 @@
 apt-transport-https
 atool
+bash
 bat
 black
 ca-certificates
@@ -17,6 +18,7 @@ gnupg
 gnupg-agent
 htop
 iperf3
+locales
 lsb-release
 lsof
 ltrace
