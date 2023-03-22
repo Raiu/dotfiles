@@ -1,6 +1,17 @@
 #!/usr/bin/env sh
 
+# Root or sudo
+if [ "$(id -u)" -eq 0 ]; then
+    SUDO=""
+elif command -v sudo >/dev/null 2>&1; then
+    SUDO="sudo"
+else
+    echo "ERROR: Please run as root or install sudo"
+    exit
+fi
+
 # Get distro
+distro=""
 if [ ! -f /etc/os-release ]; then
     echo "ERROR: /etc/os-release does not exist."
     exit 1
@@ -13,35 +24,35 @@ fi
 
 # Check the distro and set the package manager and package file variables
 case "$distro" in
-"debian")
-    package_manager="apt-get"
-    package_file="debian.list"
-    install_command="install -y"
-    ;;
-"ubuntu")
-    package_manager="apt"
-    package_file="ubuntu.list"
-    install_command="install -y"
-    ;;
-"centos" | "fedora")
-    package_manager="dnf"
-    package_file="redhat.list"
-    install_command="install -y"
-    ;;
-"arch")
-    package_manager="pacman"
-    package_file="arch.list"
-    install_command="-S --noconfirm"
-    ;;
-"alpine")
-    package_manager="apk"
-    package_file="alpine.list"
-    install_command="add -y"
-    ;;
-*)
-    echo "Error: Unable to detect distro."
-    exit 1
-    ;;
+    "debian")
+        package_manager="apt-get"
+        package_file="list.pkg.debian"
+        install_command="install -y"
+        ;;
+    "ubuntu")
+        package_manager="apt"
+        package_file="list.pkg.ubuntu"
+        install_command="install -y"
+        ;;
+    "centos" | "fedora")
+        package_manager="dnf"
+        package_file="redhat.list"
+        install_command="install -y"
+        ;;
+    "arch")
+        package_manager="pacman"
+        package_file="arch.list"
+        install_command="-S --noconfirm"
+        ;;
+    "alpine")
+        package_manager="apk"
+        package_file="alpine.list"
+        install_command="add -y"
+        ;;
+    *)
+        echo "Error: Unable to detect distro."
+        exit 1
+        ;;
 esac
 
 BASEDIR="$(cd "$(dirname "${0}")" && pwd)"
@@ -51,7 +62,7 @@ if [ -f "$BASEDIR/$package_file" ]; then
     package_string=$(awk '{print}' ORS=' ' "$BASEDIR/$package_file")
 
     # Install the packages using the appropriate package manager and install command
-    $package_manager $install_command $package_string
+    $SUDO $package_manager $install_command $package_string
 else
     echo "Error: can not find $BASEDIR/$package_file"
 fi

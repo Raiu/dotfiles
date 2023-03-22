@@ -1,3 +1,4 @@
+https://github.com/Pilaton/OhMyZsh-full-autoupdate.git "$ZDOTDIR/oh-my-zsh/custom/plugins/ohmyzsh-full-autoupdate"
 https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZDOTDIR/oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
 https://github.com/zsh-users/zsh-autosuggestions "$ZDOTDIR/oh-my-zsh/custom/plugins/zsh-autosuggestions"
 https://github.com/sindresorhus/pure.git "$ZDOTDIR/pure"

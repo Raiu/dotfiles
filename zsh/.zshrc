@@ -1,12 +1,16 @@
+# $PATH
+typeset -U path PATH
+path=("$HOME/.local/bin" "$path[@]")
+
 # Env
 export ZSH="$ZDOTDIR/oh-my-zsh"
-export $ZSH_CUSTOM="$ZSH/custom"
+export ZSH_CUSTOM="$ZSH/custom"
 fpath+=($ZDOTDIR/pure)
 
 
 # OMZ
 ZSH_THEME=""
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting ohmyzsh-full-autoupdate)
 source $ZSH/oh-my-zsh.sh
 DISABLE_AUTO_UPDATE=true
 DISABLE_UPDATE_PROMPT=true
@@ -47,12 +51,12 @@ else
 fi
 
 # Alias
-if which exa >/dev/null; then
+if which exa > /dev/null; then
     alias ls='exa --icons --group-directories-first'
     alias lsa='exa -a --icons --group-directories-first'
     alias lt='exa -T --group-directories-first --icons --git'
     alias lta='exa -Ta --group-directories-first --icons --git'
-    alias ll='exa -lamhg@ --group-directories-first --color-scale --icons --git'
+    alias ll='exa -lmhg@ --group-directories-first --color-scale --icons --git'
     alias la='exa -lamhg@ --group-directories-first --color-scale --icons --git'
     alias lx='exa -lbhHigUmuSa@ --group-directories-first --color-scale --icons --git --time-style=long-iso'
 else

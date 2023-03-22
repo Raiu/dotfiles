@@ -2,6 +2,11 @@
 
 set -e
 
+[ -z "$XDG_CONFIG_HOME" ]   && export XDG_CONFIG_HOME="$HOME/.config"
+[ -z "$XDG_CACHE_HOME" ]    && export XDG_CACHE_HOME="$HOME/.cache"
+[ -z "$XDG_DATA_HOME" ]     && export XDG_DATA_HOME="$HOME/.local/share"
+[ -z "$XDG_STATE_HOME" ]    && export XDG_STATE_HOME="$HOME/.local/state"
+
 BASEDIR="$(cd "$(dirname "${0}")" && pwd)"
 
 DOTFILES_REPO=${DOTFILES_REPO:-Raiu/dotfiles}
@@ -13,6 +18,8 @@ DOTFILES_LOCATION=${DOTFILES_LOCATION:-$HOME/.dotfiles}
 DOTBOT_DIR="$DOTFILES_LOCATION/.dotbot"
 DOTBOT_BIN="bin/dotbot"
 CONFIG="install.conf.yaml"
+
+FIRST_INSTALL=false
 
 
 command_exists() {
@@ -36,21 +43,24 @@ command_exists git || {
 
 if [ ! -d "$DOTFILES_LOCATION" ]; then
     git clone "$DOTFILES_REPO" "$DOTFILES_LOCATION"
-else
+    FIRST_INSTALL=true
+    touch "$DOTFILES_LOCATION/installed" 
+elif [ ! -f "$DOTFILES_LOCATION/installed" ]; then
     echo "${DOTFILES_LOCATION} already exist, please delete before running this script"
     exit 1
 fi
 
 cd "${BASEDIR}"
 git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
-#git submodule update --init --recursive "${DOTBOT_DIR}"
 git submodule update --init --recursive
 
 "${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" -c "${CONFIG}" "${@}"
 
-# NOPASSWD Sudo
+# nopasswd Sudo
 echo "$USER ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee "/etc/sudoers.d/$USER" > /dev/null
 
+sudo bash ~/.dotfiles/scripts/pkg_install.sh # Install packages
+bash ~/.dotfiles/scripts/setup_zsh.sh
 
 if command_exists zsh; then
     if [ -z "$ZSH_VERSION" ]; then
