@@ -1,20 +1,12 @@
 #!/usr/bin/env sh
 
 # Check if $ZDOTDIR is set
-if [ -z "$ZDOTDIR" ]; then
-    # Set $ZDOTDIR to $XDG_CONFIG_HOME/zsh if it is set
-    if [ -n "$XDG_CONFIG_HOME" ]; then
-        ZDOTDIR="$XDG_CONFIG_HOME/zsh"
-    else
-        # Otherwise, set $ZDOTDIR to $HOME/.config/zsh
-        ZDOTDIR="$HOME/.config/zsh"
-    fi
-fi
+[ -z "$ZDOTDIR" ] && ([ -n "$XDG_CONFIG_HOME" ] && ZDOTDIR="$XDG_CONFIG_HOME/zsh" || ZDOTDIR="$HOME/.config/zsh")
 
 # Check if oh-my-zsh is installed
 if [ ! -d "$ZDOTDIR/oh-my-zsh" ]; then
     # Install oh-my-zsh if it is not already installed
-    ZSH="$ZDOTDIR/oh-my-zsh" sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    ZSH="$ZDOTDIR/oh-my-zsh" sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --keep-zshrc
 fi
 
 BASEDIR="$(cd "$(dirname "${0}")" && pwd)"

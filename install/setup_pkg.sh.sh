@@ -1,32 +1,18 @@
 #!/usr/bin/env sh
 
-# Check if /etc/os-release exists
+# Get distro
 if [ ! -f /etc/os-release ]; then
-    echo "Error: /etc/os-release does not exist."
+    echo "ERROR: /etc/os-release does not exist."
     exit 1
 fi
-
-# Read the ID field from /etc/os-release
-OLDIFS=$IFS
-IFS="="
-while read -r row; do
-    set $row
-    key=$1
-    value=$2
-    if [ "$key" == "ID" ]; then
-        os_id=$(echo "$value" | awk '{print tolower($0)}')
-    fi
-done </etc/os-release
-IFS=$OLDIFS
-
-# Check if the id variable is set
-if [ -z "$os_id" ]; then
-    echo "Error: ID field not found in /etc/os-release."
+distro=$(grep "^ID=" /etc/os-release | cut -d= -f2 | awk '{print tolower($0)}')
+if [ -z "$distro" ]; then
+    echo "ERROR: ID field not found in /etc/os-release."
     exit 1
 fi
 
 # Check the distro and set the package manager and package file variables
-case "$os_id" in
+case "$distro" in
 "debian")
     package_manager="apt-get"
     package_file="debian.list"
