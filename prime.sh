@@ -10,6 +10,12 @@ else
     exit
 fi
 
+# Var
+PACKAGES_DEBIAN="git zsh vim locales software-properties-common"
+PACKAGES_UBUNTU="git zsh vim locales"
+PACKAGES_RHEL=""
+PACKAGES_ALPINE="git zsh vim shadow"
+
 get_distro() {
     if [ ! -f /etc/os-release ]; then
         echo "ERROR: /etc/os-release does not exist."
@@ -23,27 +29,24 @@ get_distro() {
 }
 
 install_packages() {
-    case "$os_id" in 
+    disto=$1
+    case "$disto" in 
         "debian") 
-            packages="git zsh vim locales software-properties-common" 
             $SUDO apt update 
-            $SUDO apt install -y $packages 
+            $SUDO apt install -y $PACKAGES_DEBIAN 
             $SUDO apt-add-repository contrib && $SUDO apt-add-repository non-free 
             ;; 
         "ubuntu") 
-            packages="git zsh vim locales" 
             $SUDO apt update 
-            $SUDO apt install -y $packages 
+            $SUDO apt install -y $PACKAGES_UBUNTU 
             ;;  
-        "centos"| "fedora") ;;
-        "arch") ;;
+        "centos"| "fedora")
+            ;;
         "alpine")
-            packages="git zsh vim shadow"
-            $SUDO apk add -y $packages
+            $SUDO apk add -y $PACKAGES_ALPINE
             ;;
         *)
             echo "Error: Unable to detect distro."
-            exit 1
             ;;
     esac  
 }
@@ -72,18 +75,11 @@ EOF
 mkdir_xdg() {
     mkdir -p '/root/.cache' '/root/.config' '/root/.local/share' '/root/.local/state'
     chown root:root '/root/.cache' '/root/.config' '/root/.local/share' '/root/.local/state'
-
-    for d in /home/*
-
     for user_home in /home/*; do
-    username=$(basename "$user_home")
-    
-    # Create XDG directories
-    $SUDO mkdir -p "$user_home/.cache" "$user_home/.config" "$user_home/.local/state" "$user_home/.local/share"
-    
-    # Change ownership of XDG directories to user
-    $SUDO chown -R "$username:$username" "$user_home/.cache" "$user_home/.config" "$user_home/.local/state" "$user_home/.local/share"
-done
+        username=$(basename "$user_home")
+        $SUDO mkdir -p "$user_home/.cache" "$user_home/.config" "$user_home/.local/state" "$user_home/.local/share"
+        $SUDO chown -R "$username:$username" "$user_home/.cache" "$user_home/.config" "$user_home/.local/state" "$user_home/.local/share"
+    done
 }
 
 read_input() {
@@ -99,6 +95,5 @@ read_input() {
 
 distro=$(get_distro)
 
-read_input "Do you want to install packages?" && install_packages
-
-read_input "Do you want to set up ZSH and XDG?" && setup_zsh_xdg
+read_input "Do you want to install packages?" && install_packages $distro
+read_input "Do you want to set up ZSH and XDG?" && zshenv_xdg

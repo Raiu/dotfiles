@@ -8,6 +8,12 @@ DOTFILES_BRANCH=${DOTFILES_BRANCH:-master}
 
 DOTFILES_LOCATION=${DOTFILES_LOCATION:-$HOME/.dotfiles}
 
+CONFIG="install.conf.yaml"
+DOTBOT_DIR=".dotbot"
+
+DOTBOT_BIN="bin/dotbot"
+BASEDIR="$(cd "$(dirname "${0}")" && pwd)"
+
 command_exists() {
     command -v "$@" >/dev/null 2>&1
 }
@@ -43,3 +49,10 @@ if command_exists zsh; then
         fi
     fi
 fi
+
+cd "${BASEDIR}"
+git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
+#git submodule update --init --recursive "${DOTBOT_DIR}"
+git submodule update --init --recursive
+
+"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" -c "${CONFIG}" "${@}"
