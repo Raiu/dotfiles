@@ -6,7 +6,7 @@ path=("$HOME/.local/bin" "$path[@]")
 export ZSH="$ZDOTDIR/oh-my-zsh"
 export ZSH_CUSTOM="$ZSH/custom"
 fpath+=($ZDOTDIR/pure)
-
+[[ -f "$ZDOTDIR/.env" ]] && source "$ZDOTDIR/.env"
 
 # OMZ
 ZSH_THEME=""
@@ -16,7 +16,7 @@ DISABLE_AUTO_UPDATE=true
 DISABLE_UPDATE_PROMPT=true
 
 # History
-if [ ! -d "${XDG_STATE_HOME}/zsh" ] ; then mkdir -p "${XDG_STATE_HOME}/zsh" ; fi
+[[ ! -d "${XDG_STATE_HOME}/zsh" ]] && mkdir -p "${XDG_STATE_HOME}/zsh"
 HISTFILE="${XDG_STATE_HOME}/zsh/history"
 HISTSIZE=10000
 SAVEHIST=10000
@@ -49,6 +49,22 @@ else
         LC_COLLATE=C ls -h --group-directories-first --color=auto
     }
 fi
+
+if $(whence batcat >/dev/null); then
+  alias bat="batcat"
+fi
+
+alias tmux="TERM=screen-256color-bce tmux"
+TMUX_DEFAULT_SESSION="TMUX"
+alias t="tmux -u a -d -t ${TMUX_DEFAULT_SESSION} 2> /dev/null || tmux -u new -s ${TMUX_DEFAULT_SESSION}"
+if [[ $WT_PROFILE_ID = $TMUXWTPROFILE ]]; then
+    if [[ -z "$TMUX" ]]; then
+        tmux attach -t $TMUX_DEFAULT_SESSION || tmux new -s $TMUX_DEFAULT_SESSION
+    fi
+fi
+
+# Switch to xterm if we're in a tmux session.
+[[ -z "$TMUX" ]] && TERM="xterm-256color"
 
 # Alias
 if which exa > /dev/null; then
