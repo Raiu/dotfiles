@@ -1,37 +1,30 @@
-
 " XDG
 " https://blog.joren.ga/vim-xdg
 """""
-if empty($MYVIMRC)          | let $MYVIMRC          = expand('<sfile>:p')   | endif
-if empty($XDG_CACHE_HOME)   | let $XDG_CACHE_HOME   = $HOME."/.cache"       | endif
-if empty($XDG_CONFIG_HOME)  | let $XDG_CONFIG_HOME  = $HOME."/.config"      | endif
-if empty($XDG_DATA_HOME)    | let $XDG_DATA_HOME    = $HOME."/.local/share" | endif
-if empty($XDG_STATE_HOME)   | let $XDG_STATE_HOME   = $HOME."/.local/state" | endif
+if empty($XDG_CACHE_HOME)   | let $XDG_CACHE_HOME   = $HOME."/.cache"           | endif
+if empty($XDG_CONFIG_HOME)  | let $XDG_CONFIG_HOME  = $HOME."/.config"          | endif
+if empty($XDG_DATA_HOME)    | let $XDG_DATA_HOME    = $HOME."/.local/share"     | endif
+if empty($XDG_STATE_HOME)   | let $XDG_STATE_HOME   = $HOME."/.local/state"     | endif
+if empty($MYVIMRC)          | let $MYVIMRC          = expand('<sfile>:p')       | endif
+if empty($VIMDIR)           | let $VIMDIR           = $XDG_CONFIG_HOME."/vim"   | endif
+
 set runtimepath^=$XDG_CONFIG_HOME/vim
 set runtimepath+=$XDG_DATA_HOME/vim
 set runtimepath+=$XDG_CONFIG_HOME/vim/after
 set packpath^=$XDG_DATA_HOME/vim,$XDG_CONFIG_HOME/vim
 set packpath+=$XDG_CONFIG_HOME/vim/after,$XDG_DATA_HOME/vim/after
-set viminfo+=n$XDG_CACHE_HOME/vim/viminfo
 let g:netrw_home = $XDG_DATA_HOME."/vim"
 call mkdir($XDG_DATA_HOME."/vim/spell", 'p', 0700)
-set backupdir=$XDG_STATE_HOME/vim/backup    | call mkdir(&backupdir, 'p', 0700)
-set directory=$XDG_STATE_HOME/vim/swap      | call mkdir(&directory, 'p', 0700)
-set undodir=$XDG_STATE_HOME/vim/undo        | call mkdir(&undodir,   'p', 0700)
-set viewdir=$XDG_STATE_HOME/vim/view        | call mkdir(&viewdir,   'p', 0700)
+set backupdir=$XDG_STATE_HOME/vim/backup | call mkdir(&backupdir, 'p', 0700)
+set directory=$XDG_STATE_HOME/vim/swap   | call mkdir(&directory, 'p', 0700)
+set undodir=$XDG_STATE_HOME/vim/undo     | call mkdir(&undodir,   'p', 0700)
+set viewdir=$XDG_STATE_HOME/vim/view     | call mkdir(&viewdir,   'p', 0700)
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Maintainer:
-"       Amir Salihefendic - @amix3k
-"
-" Awesome_version:
-"       Get this config, nice color schemes and lots of plugins!
-"
-"       Install the awesome version from:
-"
 "           https://github.com/amix/vimrc
 "
 " Sections:
+"    -> Plugins
 "    -> General
 "    -> VIM user interface
 "    -> Colors and Fonts
@@ -48,6 +41,23 @@ set viewdir=$XDG_STATE_HOME/vim/view        | call mkdir(&viewdir,   'p', 0700)
 "
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Plugins
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set nocompatible
+filetype off
+
+" set the runtime path to include Vundle and initialize
+set runtimepath+=$VIMDIR/bundle/Vundle.vim
+call vundle#begin("$VIMDIR/bundle")
+Plugin 'scrooloose/nerdtree'
+Plugin 'sheerun/vim-polyglot'
+Plugin 'tpope/vim-fugitive'
+Plugin 'roxma/vim-paste-easy'
+Plugin 'vim-airline/vim-airline'
+Plugin 'joshdick/onedark.vim'
+call vundle#end()
+filetype plugin indent on
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => General
@@ -74,6 +84,8 @@ nmap <leader>w :w!<cr>
 " (useful for handling the permission-denied error)
 command! W execute 'w !sudo tee % > /dev/null' <bar> edit!
 
+" Reload on saving vimrc
+autocmd! BufWritePost $MYVIMRC source $MYVIMRC | echom "Reloaded $MYVIMRC"
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => VIM user interface
@@ -123,6 +135,9 @@ set hlsearch
 " Makes search act like search in modern browsers
 set incsearch
 
+" Toggle hl with F5
+nnoremap <F5> :set hlsearch!<CR>
+
 " Don't redraw while executing macros (good performance config)
 set lazyredraw
 
@@ -149,7 +164,6 @@ endif
 " Add a bit extra margin to the left
 set foldcolumn=1
 
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Colors and Fonts
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -164,12 +178,20 @@ if $COLORTERM == 'gnome-terminal'
     set t_Co=256
 endif
 
+"Use 24-bit (true-color) mode in Vim/Neovim when outside tmux.
+if (empty($TMUX))
+    if (has("termguicolors"))
+        set termguicolors
+    endif
+endif
+
 try
-    colorscheme desert
+    colorscheme onedark
+    let g:airline_theme='onedark'
 catch
 endtry
 
-set background=dark
+hi Normal guibg=NONE ctermbg=NONE
 
 " Set extra options when running in GUI mode
 if has("gui_running")
@@ -185,7 +207,6 @@ set encoding=utf8
 " Use Unix as the standard file type
 set ffs=unix,dos,mac
 
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Files, backups and undo
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -193,7 +214,6 @@ set ffs=unix,dos,mac
 set nobackup
 set nowb
 set noswapfile
-
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Text, tab and indent related
@@ -216,7 +236,6 @@ set ai "Auto indent
 set si "Smart indent
 set wrap "Wrap lines
 
-
 """"""""""""""""""""""""""""""
 " => Visual mode related
 """"""""""""""""""""""""""""""
@@ -224,7 +243,6 @@ set wrap "Wrap lines
 " Super useful! From an idea by Michael Naumann
 vnoremap <silent> * :<C-u>call VisualSelection('', '')<CR>/<C-R>=@/<CR><CR>
 vnoremap <silent> # :<C-u>call VisualSelection('', '')<CR>?<C-R>=@/<CR><CR>
-
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Moving around, tabs, windows and buffers
@@ -281,16 +299,11 @@ endtry
 " Return to last edit position when opening files (You want this!)
 au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 
-
 """"""""""""""""""""""""""""""
 " => Status line
 """"""""""""""""""""""""""""""
 " Always show the status line
 set laststatus=2
-
-" Format the status line
-set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ %l\ \ Column:\ %c
-
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Editing mappings
@@ -311,6 +324,10 @@ if has("mac") || has("macunix")
   vmap <D-k> <M-k>
 endif
 
+" Enter and Exit insert mode with CTRL-Space
+nmap <C-@> a
+imap <C-@> <Esc>
+
 " Delete trailing white space on save, useful for some filetypes ;)
 fun! CleanExtraSpaces()
     let save_cursor = getpos(".")
@@ -324,7 +341,6 @@ if has("autocmd")
     autocmd BufWritePre *.txt,*.js,*.py,*.wiki,*.sh,*.coffee :call CleanExtraSpaces()
 endif
 
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Spell checking
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -336,7 +352,6 @@ map <leader>sn ]s
 map <leader>sp [s
 map <leader>sa zg
 map <leader>s? z=
-
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Misc
@@ -353,6 +368,14 @@ map <leader>x :e ~/buffer.md<cr>
 " Toggle paste mode on and off
 map <leader>pp :setlocal paste!<cr>
 
+silent! nmap <F2> :NERDTreeToggle<CR>
+silent! map <F3> :NERDTreeFind<CR>
+
+let g:NERDTreeMapActivateNode="<F3>"
+let g:NERDTreeMapPreview="<F4>"
+
+" Moved viminfo to the bottom because some plugins overwrite it
+set viminfo+=n$XDG_CACHE_HOME/vim/viminfo
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Helper functions
