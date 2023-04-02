@@ -11,11 +11,11 @@ else
 fi
 
 # Var
-PACKAGES_DEBIAN="sudo bash zsh git vim locales"
-PACKAGES_UBUNTU="sudo bash zsh git vim locales"
-PACKAGES_RHEL="sudo bash zsh git vim"
-PACKAGES_ALPINE="sudo bash zsh git vim shadow"
-PACKAGES_ARCH="sudo bash zsh git vim"
+PACKAGES_DEBIAN="curl wget sudo bash zsh git vim locales ca-certificates gnupg"
+PACKAGES_UBUNTU="curl wget sudo bash zsh git vim locales ca-certificates gnupg"
+PACKAGES_RHEL="curl wget sudo bash zsh git vim"
+PACKAGES_ALPINE="curl wget sudo bash zsh git vim shadow"
+PACKAGES_ARCH="curl wget sudo bash zsh git vim"
 
 get_distro() {
     if [ ! -f '/etc/os-release' ]; then
@@ -67,15 +67,15 @@ install_packages() {
 }
 
 alpine_enable_repo() {
-$SUDO tee '/etc/apk/repositories' > /dev/null << EOF
+    $SUDO tee '/etc/apk/repositories' > /dev/null << EOF
 http://ftp.acc.umu.se/mirror/alpinelinux.org/v$(cut -d'.' -f1,2 /etc/alpine-release)/main/
 http://ftp.acc.umu.se/mirror/alpinelinux.org/v$(cut -d'.' -f1,2 /etc/alpine-release)/community/
 EOF
 }
 
 zshenv_xdg() {
-$SUDO mkdir -p '/etc/zsh'
-$SUDO tee '/etc/zsh/zshenv' > /dev/null << 'EOF'
+    $SUDO mkdir -p '/etc/zsh'
+    $SUDO tee '/etc/zsh/zshenv' > /dev/null << 'EOF'
 if [[ -z "$PATH" || "$PATH" == "/bin:/usr/bin" ]]
 then
         export PATH="/usr/local/bin:/usr/bin:/bin"
@@ -109,13 +109,13 @@ locales_input() {
     distro=$1
     # debian or ubuntu
     if [ "$distro" = "debian" ] || [ "$distro" = "ubuntu" ]; then
-$SUDO tee '/etc/locale.gen' > /dev/null << EOF
+    $SUDO tee '/etc/locale.gen' > /dev/null << EOF
 en_US.UTF-8 UTF-8
 en_GB.UTF-8 UTF-8
 sv_SE.UTF-8 UTF-8
 EOF
-$SUDO locale-gen
-$SUDO tee '/etc/default/locale' > /dev/null << EOF
+    $SUDO locale-gen
+    $SUDO tee '/etc/default/locale' > /dev/null << EOF
 LANG=en_GB.UTF-8
 LANGUAGE=en_GB:en
 LC_CTYPE=en_GB.UTF-8
@@ -132,7 +132,7 @@ LC_MEASUREMENT=sv_SE.utf8
 LC_IDENTIFICATION=sv_SE.UTF-8
 LC_ALL=
 EOF
-$SUDO tee '/etc/zsh/zshenv' >> /dev/null << EOF
+    $SUDO tee '/etc/zsh/zshenv' >> /dev/null << EOF
 export LANG="en_GB.UTF-8"
 export LANGUAGE="en_GB:en"
 export LC_CTYPE="en_GB.UTF-8"
@@ -149,7 +149,7 @@ export LC_MEASUREMENT="sv_SE.utf8"
 export LC_IDENTIFICATION="sv_SE.UTF-8"
 export LC_ALL=""
 EOF
-$SUDO tee '/etc/default/keyboard' > /dev/null << EOF
+    $SUDO tee '/etc/default/keyboard' > /dev/null << EOF
 XKBMODEL="pc105"
 XKBLAYOUT="se"
 XKBVARIANT=""
