@@ -1,13 +1,18 @@
 #!/usr/bin/env sh
 
-# Root or sudo
-if [ "$(id -u)" -eq 0 ]; then
-    SUDO=""
-elif command -v sudo >/dev/null 2>&1; then
-    SUDO="sudo"
+_exist() {
+    command -v "$@" >/dev/null 2>&1
+}
+
+if [ "$EUID" -ne 0 ]; then
+    if _exist "sudo"; then
+        SUDO="sudo"
+    else
+        echo "ERROR: Please run as root or install sudo"
+        exit 1
+    fi
 else
-    echo "ERROR: Please run as root or install sudo"
-    exit
+    SUDO=""
 fi
 
 # Var
@@ -39,26 +44,26 @@ install_packages() {
             $SUDO apt install -y software-properties-common
             $SUDO apt-add-repository -y contrib non-free
             $SUDO apt upgrade -y
-            $SUDO apt install -y ${PACKAGES_DEBIAN}
-            $SUDO apt autoclean
+            $SUDO apt install -y "${PACKAGES_DEBIAN}"
+            $SUDO apt autoclean -y
             ;;
         "ubuntu")
             $SUDO apt update
             $SUDO add-apt-repository -y universe multiverse restricted
             $SUDO apt upgrade -y
-            $SUDO apt install -y ${PACKAGES_UBUNTU}
-            $SUDO apt autoclean
+            $SUDO apt install -y "${PACKAGES_UBUNTU}"
+            $SUDO apt autoclean -y
             ;;
         "centos"| "fedora")
-            $SUDO dnf install -y ${PACKAGES_RHEL}
+            $SUDO dnf install -y "${PACKAGES_RHEL}"
             ;;
         "alpine")
             alpine_enable_repo
             $SUDO apk update && apk upgrade
-            $SUDO apk add -y ${PACKAGES_ALPINE}
+            $SUDO apk add -y "${PACKAGES_ALPINE}"
             ;;
         "arch")
-            $SUDO pacman -S --noconfirm ${PACKAGES_ARCH}
+            $SUDO pacman -S --noconfirm "${PACKAGES_ARCH}"
             ;;
         *)
             echo "Error: Unable to detect distro."
@@ -109,13 +114,13 @@ locales_input() {
     distro=$1
     # debian or ubuntu
     if [ "$distro" = "debian" ] || [ "$distro" = "ubuntu" ]; then
-    $SUDO tee '/etc/locale.gen' > /dev/null << EOF
+        $SUDO tee '/etc/locale.gen' > /dev/null << EOF
 en_US.UTF-8 UTF-8
 en_GB.UTF-8 UTF-8
 sv_SE.UTF-8 UTF-8
 EOF
-    $SUDO locale-gen
-    $SUDO tee '/etc/default/locale' > /dev/null << EOF
+        $SUDO locale-gen
+        $SUDO tee '/etc/default/locale' > /dev/null << EOF
 LANG=en_GB.UTF-8
 LANGUAGE=en_GB:en
 LC_CTYPE=en_GB.UTF-8
@@ -132,7 +137,7 @@ LC_MEASUREMENT=sv_SE.utf8
 LC_IDENTIFICATION=sv_SE.UTF-8
 LC_ALL=
 EOF
-    $SUDO tee '/etc/zsh/zshenv' >> /dev/null << EOF
+        $SUDO tee '/etc/zsh/zshenv' >> /dev/null << EOF
 export LANG="en_GB.UTF-8"
 export LANGUAGE="en_GB:en"
 export LC_CTYPE="en_GB.UTF-8"
@@ -149,7 +154,7 @@ export LC_MEASUREMENT="sv_SE.utf8"
 export LC_IDENTIFICATION="sv_SE.UTF-8"
 export LC_ALL=""
 EOF
-    $SUDO tee '/etc/default/keyboard' > /dev/null << EOF
+        $SUDO tee '/etc/default/keyboard' > /dev/null << EOF
 XKBMODEL="pc105"
 XKBLAYOUT="se"
 XKBVARIANT=""
