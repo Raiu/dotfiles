@@ -1,3 +1,8 @@
+# functions
+_exist() {
+    (( $+commands[$1] ))
+}
+
 # $PATH
 typeset -U path PATH
 path=("$HOME/.local/bin" "$path[@]")
@@ -39,8 +44,13 @@ zstyle ':prompt:pure:prompt:*' color cyan
 zstyle :prompt:pure:git:stash show yes
 prompt pure
 
-# Mod functions
-if which exa >/dev/null; then
+# Zoxide
+if _exist "zoxide"; then
+    eval "$(zoxide init zsh)"
+fi
+
+# List on cd
+if _exist "exa"; then
     chpwd() {
         exa --icons --group-directories-first
     }
@@ -50,24 +60,33 @@ else
     }
 fi
 
-if $(whence batcat >/dev/null); then
-  alias bat="batcat"
-fi
-
-alias tmux="TERM=screen-256color-bce tmux"
-TMUX_DEFAULT_SESSION="TMUX"
-alias t="tmux -u a -d -t ${TMUX_DEFAULT_SESSION} 2> /dev/null || tmux -u new -s ${TMUX_DEFAULT_SESSION}"
-if [[ $WT_PROFILE_ID = $TMUXWTPROFILE ]]; then
-    if [[ -z "$TMUX" ]]; then
-        tmux attach -t $TMUX_DEFAULT_SESSION || tmux new -s $TMUX_DEFAULT_SESSION
-    fi
+# TMUX
+if _exist "tmux"; then
+    alias tmux="TERM=screen-256color-bce tmux"
+    TMUX_DEFAULT_SESSION="TMUX"
+    alias t="tmux -u a -d -t ${TMUX_DEFAULT_SESSION} 2> /dev/null || tmux -u new -s ${TMUX_DEFAULT_SESSION}"
+    #if [[ $WT_PROFILE_ID = $TMUXWTPROFILE ]]; then
+    #    if [[ -z "$TMUX" ]]; then
+    #        tmux attach -t $TMUX_DEFAULT_SESSION || tmux new -s $TMUX_DEFAULT_SESSION
+    #    fi
+    #fi
 fi
 
 # Switch to xterm if we're in a tmux session.
 [[ -z "$TMUX" ]] && TERM="xterm-256color"
 
+# VIM
+export EDITOR=vim
+export VIMINIT='let $MYVIMRC="$XDG_CONFIG_HOME/vim/vimrc" | source $MYVIMRC'
+
 # Alias
-if which exa > /dev/null; then
+#######
+
+# some distro name bat as batcat
+_exist "batcat" && alias bat="batcat"
+
+# use exa
+if _exist "exa"; then
     alias ls='exa --icons --group-directories-first'
     alias lsa='exa -a --icons --group-directories-first'
     alias lt='exa -T --group-directories-first --icons --git'
@@ -80,6 +99,14 @@ else
     alias lsa='LC_COLLATE=C ls -Ah --group-directories-first --color=auto'
     alias ll='LC_COLLATE=C ls -lh --group-directories-first --color=auto'
     alias la='LC_COLLATE=C ls -lAh --group-directories-first --color=auto'
+fi
+
+if _exist "docker"; then
+    alias dc='docker compose'
+    alias dcd='docker compose down'
+    alias dcs='docker compose up -d'
+    alias dcr='docker compose restart'
+    alias dcu='docker compose down && docker compose pull && docker compose up -d'
 fi
 
 alias screen='screen -e^tt'
