@@ -35,5 +35,5 @@ else
             # Clone the repo if it is not already cloned
             git clone "$repo_url" "$repo_path"
         fi
-    done < $BASEDIR/list.zsh.plugins
+    done < "$BASEDIR/list.zsh.plugins"
 fi

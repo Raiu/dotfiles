@@ -1,14 +1,24 @@
 #!/usr/bin/env sh
 
-# Root or sudo
-if [ "$(id -u)" -eq 0 ]; then
-    SUDO=""
-elif command -v sudo >/dev/null 2>&1; then
-    SUDO="sudo"
+_exist() {
+    command -v "$@" >/dev/null 2>&1
+}
+
+if [ "$(id -u)" -ne 0 ]; then
+    if _exist "sudo"; then
+        SUDO="sudo"
+    else
+        echo "ERROR: Please run as root or install sudo"
+        exit 1
+    fi
 else
-    echo "ERROR: Please run as root or install sudo"
-    exit
+    SUDO=""
 fi
+
+[ -z "$XDG_CONFIG_HOME" ]   && export XDG_CONFIG_HOME="$HOME/.config"
+[ -z "$XDG_CACHE_HOME" ]    && export XDG_CACHE_HOME="$HOME/.cache"
+[ -z "$XDG_DATA_HOME" ]     && export XDG_DATA_HOME="$HOME/.local/share"
+[ -z "$XDG_STATE_HOME" ]    && export XDG_STATE_HOME="$HOME/.local/state"
 
 # Get distro
 distro=""

@@ -4,7 +4,7 @@ _exist() {
     command -v "$@" >/dev/null 2>&1
 }
 
-if [ "$EUID" -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
     if _exist "sudo"; then
         SUDO="sudo"
     else
