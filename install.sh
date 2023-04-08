@@ -12,6 +12,7 @@ BASEDIR="$(cd "$(dirname "${0}")" && pwd)"
 DOTFILES_REPO=${DOTFILES_REPO:-Raiu/dotfiles}
 DOTFILES_REMOTE=${DOTFILES_REMOTE:-https://github.com/${REPO}.git}
 DOTFILES_BRANCH=${DOTFILES_BRANCH:-master}
+https://github.com/Raiu/dotfiles.git
 
 DOTFILES_LOCATION=${DOTFILES_LOCATION:-$HOME/.dotfiles}
 

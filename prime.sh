@@ -109,13 +109,13 @@ locales_input() {
     distro=$1
     # debian or ubuntu
     if [ "$distro" = "debian" ] || [ "$distro" = "ubuntu" ]; then
-    $SUDO tee '/etc/locale.gen' > /dev/null << EOF
+        $SUDO tee '/etc/locale.gen' > /dev/null << EOF
 en_US.UTF-8 UTF-8
 en_GB.UTF-8 UTF-8
 sv_SE.UTF-8 UTF-8
 EOF
-    $SUDO locale-gen
-    $SUDO tee '/etc/default/locale' > /dev/null << EOF
+        $SUDO locale-gen
+        $SUDO tee '/etc/default/locale' > /dev/null << EOF
 LANG=en_GB.UTF-8
 LANGUAGE=en_GB:en
 LC_CTYPE=en_GB.UTF-8
@@ -132,7 +132,7 @@ LC_MEASUREMENT=sv_SE.utf8
 LC_IDENTIFICATION=sv_SE.UTF-8
 LC_ALL=
 EOF
-    $SUDO tee '/etc/zsh/zshenv' >> /dev/null << EOF
+        $SUDO tee -a '/etc/zsh/zshenv' > /dev/null << EOF
 export LANG="en_GB.UTF-8"
 export LANGUAGE="en_GB:en"
 export LC_CTYPE="en_GB.UTF-8"
@@ -149,7 +149,7 @@ export LC_MEASUREMENT="sv_SE.utf8"
 export LC_IDENTIFICATION="sv_SE.UTF-8"
 export LC_ALL=""
 EOF
-    $SUDO tee '/etc/default/keyboard' > /dev/null << EOF
+        $SUDO tee '/etc/default/keyboard' > /dev/null << EOF
 XKBMODEL="pc105"
 XKBLAYOUT="se"
 XKBVARIANT=""
