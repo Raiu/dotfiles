@@ -2,9 +2,12 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
+    "features": {
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    },
     "customizations": {
-		"vscode": {
-			"settings": {
+	    "vscode": {
+		    "settings": {
                 "editor.fontFamily": "Consolas, 'Courier New', monospace",
                 "keyboard.layout": "0000041D",
                 "workbench.colorTheme": "Material Theme Darker High Contrast",
