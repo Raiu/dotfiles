@@ -1,68 +1,56 @@
 #!/usr/bin/env sh
 
-set -e
-
 # Common functions
-_exist() {
-    command -v "$@" >/dev/null 2>&1
-}
+_exist()    { command -v "$@" >/dev/null 2>&1; }
+_error()    { printf 'ERROR: %s\n' "$1"; exit 1; }
+_warn()     { printf 'WARNING: %s\n' "$1"; }
 
-check_commands() {
-    for cmd in "$@"; do
-        if ! _exist "$cmd"; then
-            echo "$cmd is not installed"
-            exit 1
-        fi
-    done
-}
+! _exist 'git' && _error 'install git'
 
-check_commands sudo git
-
-# Set sudo
 SUDO=""
-[ "$EUID" -ne 0 ] && SUDO="$(command -v sudo)"
+if [ "$(id -u)" -ne 0 ]; then
+    if _exist "sudo"; then
+        SUDO="$(command -v sudo)"
+    else
+        _error 'Please run as root or install sudo'
+    fi
+fi
 
-[ -z "$XDG_CONFIG_HOME" ]   && export XDG_CONFIG_HOME="$HOME/.config"
-[ -z "$XDG_CACHE_HOME" ]    && export XDG_CACHE_HOME="$HOME/.cache"
-[ -z "$XDG_DATA_HOME" ]     && export XDG_DATA_HOME="$HOME/.local/share"
-[ -z "$XDG_STATE_HOME" ]    && export XDG_STATE_HOME="$HOME/.local/state"
 
-# Set variables
-DOTFILES_REPO=${DOTFILES_REPO:-"Raiu/dotfiles"}
-DOTFILES_REMOTE=${DOTFILES_REMOTE:-"https://github.com/${REPO}.git"}
-DOTFILES_BRANCH=${DOTFILES_BRANCH:-"master"}
-DOTFILES_LOCATION=${DOTFILES:-"$HOME/.dotfiles"}
-DOTBOT_DIR="$DOTFILES_LOCATION/.dotbot"
-DOTBOT_BIN="$DOTBOT_DIR/bin/dotbot"
-BASEDIR="$(cd "$(dirname "${0}")" && pwd)"
-CONFIG="install.conf.yaml"
+[ -z "$XDG_CONFIG_HOME" ]   && export XDG_CONFIG_HOME="${HOME}/.config"
+[ -z "$XDG_CACHE_HOME" ]    && export XDG_CACHE_HOME="${HOME}/.cache"
+[ -z "$XDG_DATA_HOME" ]     && export XDG_DATA_HOME="${HOME}/.local/share"
+[ -z "$XDG_STATE_HOME" ]    && export XDG_STATE_HOME="${HOME}/.local/state"
 
-# First check if $DOTFILES_LOCATION already exist
-# If exist, check if install.sh and install.conf.yaml exist
-# if they exist skip to next step, if not stop and inform the user to remove dir
-# clone the dotfiles repo to the directory
-# pull all the submodules
+[ -z "$DOTFILES_REPO" ]      && export DOTFILES_REPO="Raiu/dotfiles"
+[ -z "$DOTFILES_REMOTE" ]    && export DOTFILES_REMOTE="https://github.com/${REPO}.git"
+[ -z "$DOTFILES_BRANCH" ]    && export DOTFILES_BRANCH="master"
+[ -z "$DOTFILES_LOCATION" ]  && export DOTFILES="${HOME}/.dotfiles"
+[ -z "$DOTBOT_DIR" ]         && export DOTBOT_DIR="${DOTFILES_LOCATION}/.dotbot"
+[ -z "$DOTBOT_BIN" ]         && export DOTBOT_BIN="${DOTBOT_DIR}/bin/dotbot"
+[ -z "$DOTBOT_CONFIG" ]      && export DOTBOT_CONFIG="install.conf.yaml"
 
-is_valid_git_repo() {
-    [ "$(git -C "${DOTFILES_LOCATION}" rev-parse --is-inside-work-tree 2>/dev/null)" = "true" ] && \
-    [ "$(git -C "${DOTFILES_LOCATION}" config --get remote.origin.url)" = "${DOTFILES_REMOTE}" ] || return 1
+_is_correct_repo() {
+    _dir=$1
+    _url=$2
+    [ "$(git -C "$_dir" rev-parse --is-inside-work-tree 2>/dev/null)" = "true" ] && \
+    [ "$(git -C "$_dir" config --get remote.origin.url)" = "$_url" ]
 }
 
 clone_dotfiles() {
-    if [ -d "${DOTFILES_LOCATION}" ]; then
-        if ! is_valid_git_repo; then
-            printf "%s already exists and it doesnt contain our repo.\n" "${DOTFILES_LOCATION}"
-            exit 1
+    if [ -d "$DOTFILES_LOCATION" ]; then
+        if ! _is_correct_repo "$DOTFILES_LOCATION" "$DOTFILES_REMOTE"; then
+            _error "${DOTFILES_LOCATION} already exists and it doesnt contain our repo."
         fi
     else
-        git clone "${DOTFILES_REMOTE}" "${DOTFILES_LOCATION}"
+        git clone "$DOTFILES_REMOTE" "$DOTFILES_LOCATION"
     fi
 }
 
 run_dotbot() {
     git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
     git -C "${DOTFILES_LOCATION}"  submodule update --init --recursive
-    "${DOTBOT_BIN}" -d "${DOTFILES_LOCATION}" -c "${CONFIG}" "${@}"
+    "${DOTBOT_BIN}" -d "${DOTFILES_LOCATION}" -c "${DOTBOT_CONFIG}" "${@}"
 }
 
 setup_sudo() {
@@ -71,16 +59,11 @@ setup_sudo() {
     printf "%s" "$content" | $SUDO tee "$file" > /dev/null
 }
 
-install_pkg() {
-    $SUDO sh "$DOTFILES_LOCATION/setup/pkg/pkg_install.sh" # Install packages
+setup() {
+    _setup_script=$1
+    sh "${DOTFILES_LOCATION}/setup/${_setup_script}/${_setup_script}.sh"
 }
 
-
-install_zsh() {
-    sh "$DOTFILES_LOCATION/setup/zsh/setup_zsh.sh"
-    if _exist zsh; then
-        if [ -z "$ZSH_VERSION" ]; then
-            $SUDO usermod --shell "$(command -v zsh)" "${USER}"
-        fi
-    fi
+main() {
+    setup 'zsh'
 }
