@@ -43,12 +43,10 @@ setup_pkg_ubuntu() {
     printf "    * Cleaning up\n"
     $SUDO apt-get autoremove -y > /dev/null
     $SUDO apt-get clean -y > /dev/null
-
-    export DEBIAN_FRONTEND=""
 }
 
 setup_pkg_debian() {
-    export DEBIAN_FRONTEND=noninteractive
+    printf 'debconf debconf/frontend select Noninteractive' | $SUDO debconf-set-selections
 
     printf '# Installing Debian packages\n'
     $SUDO apt-get update -y > /dev/null
@@ -63,8 +61,6 @@ setup_pkg_debian() {
     printf "    * Cleaning up\n"
     $SUDO apt-get autoremove -y > /dev/null
     $SUDO apt-get clean -y > /dev/null
-
-    export DEBIAN_FRONTEND=""
 }
 
 setup_pkg_alpine() {
