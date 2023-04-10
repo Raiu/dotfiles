@@ -8,6 +8,7 @@ _warn()     { printf 'WARNING: %s\n' "$1"; }
 if [ "$(id -u)" -ne 0 ]; then
     if _exist 'sudo'; then
         exec sudo "$0" "$@"
+        exit $?
     else
         _error 'Please run as root or install sudo'
     fi
