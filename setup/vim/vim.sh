@@ -10,7 +10,9 @@ _warn()     { printf 'WARNING: %s\n' "$1"; }
 [ -z "$VIMDIR" ]    && export VIMDIR="$XDG_CONFIG_HOME/vim"
 [ -z "$MYVIMRC" ]   && export MYVIMRC="$VIMDIR/vimrc"
 
-git clone "https://github.com/VundleVim/Vundle.vim.git" "$XDG_CONFIG_HOME/vim/bundle/Vundle.vim"
+if [ ! -d "$VIMDIR/bundle/Vundle.vim" ]; then
+    git clone "https://github.com/VundleVim/Vundle.vim.git" "$VIMDIR/bundle/Vundle.vim"
+fi
 
 if [ -f $MYVIMRC ]; then 
     vim -c PluginInstall -c qall

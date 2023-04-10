@@ -16,7 +16,7 @@ if [ "$(id -u)" -ne 0 ]; then
     fi
 fi
 
-
+[ -z "$USER" ]              && export USER="$(whoami)"
 [ -z "$XDG_CONFIG_HOME" ]   && export XDG_CONFIG_HOME="${HOME}/.config"
 [ -z "$XDG_CACHE_HOME" ]    && export XDG_CACHE_HOME="${HOME}/.cache"
 [ -z "$XDG_DATA_HOME" ]     && export XDG_DATA_HOME="${HOME}/.local/share"
@@ -25,12 +25,20 @@ fi
 [ -z "$DOTFILES_REPO" ]      && export DOTFILES_REPO="Raiu/dotfiles"
 [ -z "$DOTFILES_REMOTE" ]    && export DOTFILES_REMOTE="https://github.com/${REPO}.git"
 [ -z "$DOTFILES_BRANCH" ]    && export DOTFILES_BRANCH="master"
-[ -z "$DOTFILES_LOCATION" ]  && export DOTFILES="${HOME}/.dotfiles"
+[ -z "$DOTFILES_LOCATION" ]  && export DOTFILES_LOCATION="${HOME}/.dotfiles"
 [ -z "$DOTBOT_DIR" ]         && export DOTBOT_DIR="${DOTFILES_LOCATION}/.dotbot"
 [ -z "$DOTBOT_BIN" ]         && export DOTBOT_BIN="${DOTBOT_DIR}/bin/dotbot"
-[ -z "$DOTBOT_CONFIG" ]      && export DOTBOT_CONFIG="install.conf.yaml"
+[ -z "$DOTBOT_CONFIG" ]      && export DOTBOT_CONFIG="${DOTFILES_LOCATION}/install.conf.yaml"
 
-_is_correct_repo() {
+#echo "DOTFILES_REPO: $DOTFILES_REPO"
+#echo "DOTFILES_REMOTE: $DOTFILES_REMOTE"
+#echo "DOTFILES_BRANCH: $DOTFILES_BRANCH"
+#echo "DOTFILES_LOCATION: $DOTFILES_LOCATION"
+#echo "DOTBOT_DIR: $DOTBOT_DIR"
+#echo "DOTBOT_BIN: $DOTBOT_BIN"
+#echo "DOTBOT_CONFIG: $DOTBOT_CONFIG"
+
+is_correct_repo() {
     _dir=$1
     _url=$2
     [ "$(git -C "$_dir" rev-parse --is-inside-work-tree 2>/dev/null)" = "true" ] && \
@@ -39,7 +47,7 @@ _is_correct_repo() {
 
 clone_dotfiles() {
     if [ -d "$DOTFILES_LOCATION" ]; then
-        if ! _is_correct_repo "$DOTFILES_LOCATION" "$DOTFILES_REMOTE"; then
+        if ! is_correct_repo "$DOTFILES_LOCATION" "$DOTFILES_REMOTE"; then
             _error "${DOTFILES_LOCATION} already exists and it doesnt contain our repo."
         fi
     else
@@ -53,17 +61,19 @@ run_dotbot() {
     "${DOTBOT_BIN}" -d "${DOTFILES_LOCATION}" -c "${DOTBOT_CONFIG}" "${@}"
 }
 
-setup_sudo() {
-    file="/etc/sudoers.d/$USER"
-    content="$USER ALL=(ALL:ALL) NOPASSWD: ALL"
-    printf "%s" "$content" | $SUDO tee "$file" > /dev/null
-}
-
 setup() {
     _setup_script=$1
+    
+    printf '* Setup: %s\n' "$_setup_script"
     sh "${DOTFILES_LOCATION}/setup/${_setup_script}/${_setup_script}.sh"
 }
 
 main() {
+    run_dotbot
+    setup 'pkg' # Install packages
     setup 'zsh'
+    setup 'vim'
+    setup 'sudo'
 }
+
+main "${@}"

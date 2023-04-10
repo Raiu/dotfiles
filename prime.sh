@@ -25,13 +25,45 @@ get_distro() {
     printf '%s' "$distro_id"
 }
 
+setup_pkg_ubuntu() {
+    printf '* Installing Ubuntu packages\n'
+    apt-get update -qq                                      > /dev/null
+    apt-get install software-properties-common -qq          > /dev/null
+    add-apt-repository -y universe multiverse restricted    > /dev/null
+    apt-get upgrade -qq                                     > /dev/null
+    apt-get install $PACKAGES_UBUNTU -qq                    > /dev/null
+    apt-get autoclean -qq                                   > /dev/null
+}
+
+setup_pkg_debian() {
+    printf '* Installing Debian packages\n'
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq                              > /dev/null
+    apt-get install software-properties-common -qq  > /dev/null
+    apt-add-repository -y contrib non-free          > /dev/null
+    apt-get upgrade -qq                             > /dev/null
+    apt-get install $PACKAGES_DEBIAN -qq            > /dev/null
+    apt-get autoclean -qq                           > /dev/null
+}
+
+setup_pkg_alpine() {
+    printf '* Installing Alpine packages\n'
+    tee '/etc/apk/repositories' > /dev/null << EOF
+http://ftp.acc.umu.se/mirror/alpinelinux.org/v$(cut -d'.' -f1,2 /etc/alpine-release)/main/
+http://ftp.acc.umu.se/mirror/alpinelinux.org/v$(cut -d'.' -f1,2 /etc/alpine-release)/community/
+EOF
+    apk update
+    apk upgrade
+    apk add -y $PACKAGES_ALPINE
+}
+
 setup_pkg() {
     _distro=$1
     case "$_distro" in
-        "debian")
+        "ubuntu")
             setup_pkg_ubuntu
             ;;
-        "ubuntu")
+        "debian")
             setup_pkg_debian
             ;;
         "alpine")
@@ -43,39 +75,8 @@ setup_pkg() {
     esac
 }
 
-setup_pkg_ubuntu() {
-    printf '* Installing Ubuntu packages'
-    apt-get update -qq                                      > /dev/null
-    apt-get install software-properties-common -qq          > /dev/null
-    add-apt-repository -y universe multiverse restricted    > /dev/null
-    apt-get upgrade -qq                                     > /dev/null
-    apt-get install $PACKAGES_UBUNTU -qq
-    apt-get autoclean -qq                                   > /dev/null
-}
-
-setup_pkg_debian() {
-    printf '* Installing Debian packages'
-    apt-get update -qq                              > /dev/null
-    apt-get install software-properties-common -qq  > /dev/null
-    apt-add-repository -y contrib non-free          > /dev/null
-    apt-get upgrade -qq                             > /dev/null
-    apt-get install $PACKAGES_DEBIAN -qq
-    apt-get autoclean -qq                           > /dev/null
-}
-
-setup_pkg_alpine() {
-    printf '* Installing Alpine packages'
-    tee '/etc/apk/repositories' > /dev/null << EOF
-http://ftp.acc.umu.se/mirror/alpinelinux.org/v$(cut -d'.' -f1,2 /etc/alpine-release)/main/
-http://ftp.acc.umu.se/mirror/alpinelinux.org/v$(cut -d'.' -f1,2 /etc/alpine-release)/community/
-EOF
-    apk update
-    apk upgrade
-    apk add -y $PACKAGES_ALPINE
-}
-
 setup_zsh() {
-    printf '* Configuring ZSH'
+    printf '* Configuring ZSH\n'
     mkdir -p '/etc/zsh'
     tee '/etc/zsh/zshenv' > /dev/null << 'EOF'
 if [[ -z "$PATH" || "$PATH" == "/bin:/usr/bin" ]]
@@ -114,7 +115,7 @@ EOF
 }
 
 setup_xdg_dir() {
-    printf '* Creating XDG directories'
+    printf '* Creating XDG directories\n'
     mkdir -p '/root/.cache' '/root/.config' '/root/.local/share' '/root/.local/state'
     chown root:root '/root/.cache' '/root/.config' '/root/.local'
     for user_home in /home/*; do
@@ -122,21 +123,6 @@ setup_xdg_dir() {
         mkdir -p "$user_home/.cache" "$user_home/.config" "$user_home/.local/bin" "$user_home/.local/state" "$user_home/.local/share"
         chown -R "$username:$username" "$user_home/.cache" "$user_home/.config" "$user_home/.local"
     done
-}
-
-setup_locales() {
-    printf '* Configuring Locales'
-    _distro=$1
-    case "$_distro" in
-        "debian")
-            setup_locales_deb
-            ;;
-        "ubuntu")
-            setup_locales_deb
-            ;;
-        *)
-            ;;
-    esac
 }
 
 setup_locales_deb() {
@@ -155,12 +141,25 @@ BACKSPACE="guess"
 EOF
 }
 
-
-DISTRO="$(get_distro)"
+setup_locales() {
+    printf '* Configuring Locales\n'
+    _distro=$1
+    case "$_distro" in
+        "debian")
+            setup_locales_deb
+            ;;
+        "ubuntu")
+            setup_locales_deb
+            ;;
+        *)
+            ;;
+    esac
+}
 
 # Start prime
-printf '#\n Start prime the system.\n###\n\n'
+printf '\n# Start prime the system.\n###\n\n'
 
+DISTRO="$(get_distro)"
 setup_pkg "$DISTRO"
 setup_xdg_dir
 setup_locales "$DISTRO"
