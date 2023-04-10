@@ -54,7 +54,8 @@ setup_pkg_debian() {
     $SUDO apt-get update -y > /dev/null
     printf "    * Adding contrib and non-free repositories\n"
     $SUDO apt-get install software-properties-common -y > /dev/null 2>&1
-    $SUDO add-apt-repository -y contrib non-free > /dev/null 2>&1
+    $SUDO add-apt-repository -y contrib > /dev/null 2>&1
+    $SUDO add-apt-repository -y non-free > /dev/null 2>&1
     printf "    * Upgrading\n"
     $SUDO apt-get upgrade -y > /dev/null
     printf "    * Installing packages: ${PACKAGES_DEBIAN}\n"
