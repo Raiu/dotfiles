@@ -1,14 +1,15 @@
 #!/usr/bin/env sh
 
+set -eu
+
 _exist()    { command -v "$@" >/dev/null 2>&1; }
 _error()    { printf 'ERROR: %s\n' "$1"; exit 1; }
 _warn()     { printf 'WARNING: %s\n' "$1"; }
 
-# Elevate script to root$
+SUDO=""
 if [ "$(id -u)" -ne 0 ]; then
-    if _exist 'sudo'; then
-        exec sudo "$0" "$@"
-        exit $?
+    if _exist "sudo"; then
+        SUDO="$(command -v sudo)"
     else
         _error 'Please run as root or install sudo'
     fi
@@ -23,40 +24,57 @@ get_distro() {
     [ ! -f '/etc/os-release' ] && _error '/etc/os-release does not exist.'
     distro_id=$(grep "^ID=" /etc/os-release | cut -d= -f2 | awk '{print tolower($0)}')
     [ -z "$distro_id" ] && _error 'ID field not found in /etc/os-release.'
+
     printf '%s' "$distro_id"
 }
 
 setup_pkg_ubuntu() {
-    printf '* Installing Ubuntu packages\n'
-    DEBIAN_FRONTEND=noninteractive apt-get update -y > /dev/null
-    DEBIAN_FRONTEND=noninteractive apt-get install software-properties-common -y > /dev/null
-    DEBIAN_FRONTEND=noninteractive add-apt-repository -y universe multiverse restricted > /dev/null
-    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y > /dev/null
-    DEBIAN_FRONTEND=noninteractive apt-get install $PACKAGES_UBUNTU -y > /dev/null
-    DEBIAN_FRONTEND=noninteractive apt-get autoremove -y > /dev/null
-    DEBIAN_FRONTEND=noninteractive apt-get clean -y > /dev/null
+    export DEBIAN_FRONTEND=noninteractive
+    
+    printf '# Installing Ubuntu packages\n'
+    $SUDO apt-get update -y > /dev/null
+    printf "    * Adding universe, multiverse and restricted repositories\n"
+    $SUDO apt-get install software-properties-common -y > /dev/null 2>&1
+    $SUDO add-apt-repository -y universe multiverse restricted > /dev/null 2>&1
+    printf "    * Upgrading\n"
+    $SUDO apt-get upgrade -y > /dev/null
+    printf "    * Installing packages: $PACKAGES_UBUNTU\n"
+    $SUDO apt-get install $PACKAGES_UBUNTU -y > /dev/null 2>&1
+    printf "    * Cleaning up\n"
+    $SUDO apt-get autoremove -y > /dev/null
+    $SUDO apt-get clean -y > /dev/null
+
+    export DEBIAN_FRONTEND=""
 }
 
 setup_pkg_debian() {
-    printf '* Installing Debian packages\n'
-    DEBIAN_FRONTEND=noninteractive apt-get update -y > /dev/null
-    DEBIAN_FRONTEND=noninteractive apt-get install software-properties-common -y > /dev/null
-    DEBIAN_FRONTEND=noninteractive apt-add-repository -y contrib non-free > /dev/null
-    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y > /dev/null
-    DEBIAN_FRONTEND=noninteractive apt-get install $PACKAGES_DEBIAN -y > /dev/null
-    DEBIAN_FRONTEND=noninteractive apt-get autoremove -y > /dev/null
-    DEBIAN_FRONTEND=noninteractive apt-get clean -y > /dev/null
+    export DEBIAN_FRONTEND=noninteractive
+
+    printf '# Installing Debian packages\n'
+    $SUDO apt-get update -y > /dev/null
+    printf "    * Adding contrib and non-free repositories\n"
+    $SUDO apt-get install software-properties-common -y > /dev/null 2>&1
+    $SUDO add-apt-repository -y contrib non-free > /dev/null 2>&1
+    printf "    * Upgrading\n"
+    $SUDO apt-get upgrade -y > /dev/null
+    printf "    * Installing packages: ${PACKAGES_DEBIAN}\n"
+    $SUDO apt-get install $PACKAGES_DEBIAN -y > /dev/null 2>&1
+    printf "    * Cleaning up\n"
+    $SUDO apt-get autoremove -y > /dev/null
+    $SUDO apt-get clean -y > /dev/null
+
+    export DEBIAN_FRONTEND=""
 }
 
 setup_pkg_alpine() {
     printf '* Installing Alpine packages\n'
-    tee '/etc/apk/repositories' > /dev/null << EOF
+    $SUDO tee '/etc/apk/repositories' > /dev/null << EOF
 http://ftp.acc.umu.se/mirror/alpinelinux.org/v$(cut -d'.' -f1,2 /etc/alpine-release)/main/
 http://ftp.acc.umu.se/mirror/alpinelinux.org/v$(cut -d'.' -f1,2 /etc/alpine-release)/community/
 EOF
-    apk update
-    apk upgrade
-    apk add -y $PACKAGES_ALPINE
+    $SUDO apk update
+    $SUDO apk upgrade
+    $SUDO apk add -y $PACKAGES_ALPINE
 }
 
 setup_pkg() {
@@ -78,9 +96,9 @@ setup_pkg() {
 }
 
 setup_zsh() {
-    printf '* Configuring ZSH\n'
-    mkdir -p '/etc/zsh'
-    tee '/etc/zsh/zshenv' > /dev/null << 'EOF'
+    printf '# Configuring ZSH\n'
+    $SUDO mkdir -p '/etc/zsh'
+    $SUDO tee '/etc/zsh/zshenv' > /dev/null << 'EOF'
 if [[ -z "$PATH" || "$PATH" == "/bin:/usr/bin" ]]
 then
         export PATH="/usr/local/bin:/usr/bin:/bin"
@@ -117,24 +135,26 @@ EOF
 }
 
 setup_xdg_dir() {
-    printf '* Creating XDG directories\n'
-    mkdir -p '/root/.cache' '/root/.config' '/root/.local/share' '/root/.local/state'
-    chown root:root '/root/.cache' '/root/.config' '/root/.local'
+    printf '# Creating XDG directories\n'
+    printf '    * root\n'
+    $SUDO mkdir -p '/root/.cache' '/root/.config' '/root/.local/share' '/root/.local/state'
+    $SUDO chown root:root '/root/.cache' '/root/.config' '/root/.local'
     for user_home in /home/*; do
         username=$(basename "$user_home")
-        mkdir -p "$user_home/.cache" "$user_home/.config" "$user_home/.local/bin" "$user_home/.local/state" "$user_home/.local/share"
-        chown -R "$username:$username" "$user_home/.cache" "$user_home/.config" "$user_home/.local"
+        printf '    * %s\n' "$username"
+        $SUDO mkdir -p "$user_home/.cache" "$user_home/.config" "$user_home/.local/bin" "$user_home/.local/state" "$user_home/.local/share"
+        $SUDO chown -R "$username:$username" "$user_home/.cache" "$user_home/.config" "$user_home/.local"
     done
 }
 
 setup_locales_deb() {
-    tee '/etc/locale.gen' > /dev/null << EOF
+    $SUDO tee '/etc/locale.gen' > /dev/null << EOF
 en_US.UTF-8 UTF-8
 en_GB.UTF-8 UTF-8
 sv_SE.UTF-8 UTF-8
 EOF
-    locale-gen > /dev/null
-    tee '/etc/default/keyboard' > /dev/null << EOF
+    $SUDO locale-gen > /dev/null
+    $SUDO tee '/etc/default/keyboard' > /dev/null << EOF
 XKBMODEL="pc105"
 XKBLAYOUT="se"
 XKBVARIANT=""
@@ -144,7 +164,7 @@ EOF
 }
 
 setup_locales() {
-    printf '* Configuring Locales\n'
+    printf '# Configuring Locales\n'
     _distro=$1
     case "$_distro" in
         "debian")
