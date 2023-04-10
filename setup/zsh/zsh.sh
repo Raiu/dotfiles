@@ -27,7 +27,7 @@ if [ ! -d "$ZDOTDIR/oh-my-zsh" ]; then
     ZSH="$ZDOTDIR/oh-my-zsh" sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --keep-zshrc
 fi
 
-# Install plugins
+# Install plugins or update them
 if [ -f "$PLUGINS_LIST" ]; then
     while read -r repo_url repo_dir; do
         eval repo_dir="$repo_dir"

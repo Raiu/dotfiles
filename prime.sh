@@ -27,23 +27,24 @@ get_distro() {
 
 setup_pkg_ubuntu() {
     printf '* Installing Ubuntu packages\n'
-    apt-get update -qq                                      > /dev/null
-    apt-get install software-properties-common -qq          > /dev/null
-    add-apt-repository -y universe multiverse restricted    > /dev/null
-    apt-get upgrade -qq                                     > /dev/null
-    apt-get install $PACKAGES_UBUNTU -qq                    > /dev/null
-    apt-get autoclean -qq                                   > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-get update -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-get install software-properties-common -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive add-apt-repository -y universe multiverse restricted > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-get install $PACKAGES_UBUNTU -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-get autoremove -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-get clean -y > /dev/null
 }
 
 setup_pkg_debian() {
     printf '* Installing Debian packages\n'
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update -qq                              > /dev/null
-    apt-get install software-properties-common -qq  > /dev/null
-    apt-add-repository -y contrib non-free          > /dev/null
-    apt-get upgrade -qq                             > /dev/null
-    apt-get install $PACKAGES_DEBIAN -qq            > /dev/null
-    apt-get autoclean -qq                           > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-get update -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-get install software-properties-common -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-add-repository -y contrib non-free > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-get install $PACKAGES_DEBIAN -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-get autoremove -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive apt-get clean -y > /dev/null
 }
 
 setup_pkg_alpine() {
@@ -166,3 +167,4 @@ setup_locales "$DISTRO"
 setup_zsh
 
 printf '\n###\n# Finished.\n'
+printf '\n'

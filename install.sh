@@ -69,7 +69,7 @@ setup() {
 }
 
 main() {
-    run_dotbot
+    run_dotbot "${@}"
     setup 'pkg' # Install packages
     setup 'zsh'
     setup 'vim'
