@@ -7,18 +7,21 @@ _error()    { printf 'ERROR: %s\n' "$1"; exit 1; }
 _warn()     { printf 'WARNING: %s\n' "$1"; }
 
 SUDO=""
+SUDOPE=""
 if [ "$(id -u)" -ne 0 ]; then
     if _exist "sudo"; then
         SUDO="$(command -v sudo)"
+        #SUDOPE="$(command -v sudo) DEBIAN_FRONTEND=noninteractive"
+        SUDOPE="$(command -v sudo)"
     else
         _error 'Please run as root or install sudo'
     fi
 fi
 
 # Packages
-PACKAGES_UBUNTU="curl wget sudo bash zsh git vim locales ca-certificates gnupg"
-PACKAGES_DEBIAN="curl wget sudo bash zsh git vim locales ca-certificates gnupg"
-PACKAGES_ALPINE="curl wget sudo bash zsh git vim shadow"
+PACKAGES_UBUNTU="ssh curl wget sudo bash zsh git vim locales ca-certificates gnupg"
+PACKAGES_DEBIAN="ssh curl wget sudo bash zsh git vim locales ca-certificates gnupg"
+PACKAGES_ALPINE="dropbear curl wget sudo bash zsh git vim shadow"
 
 get_distro() {
     [ ! -f '/etc/os-release' ] && _error '/etc/os-release does not exist.'
@@ -29,49 +32,76 @@ get_distro() {
 }
 
 setup_pkg_ubuntu() {
-    export DEBIAN_FRONTEND=noninteractive
-    
+    #export DEBIAN_FRONTEND=noninteractive
+
+    #printf '# Installing Ubuntu packages\n'
+    #$SUDOPE apt-get update -y > /dev/null
+    #printf '    * Adding universe, multiverse and restricted repositories\n'
+    #$SUDOPE apt-get install --no-install-recommends software-properties-common -y > /dev/null 2>&1
+    #$SUDOPE add-apt-repository -y universe multiverse restricted > /dev/null 2>&1
+    #printf '    * Upgrading\n'
+    #$SUDOPE apt-get upgrade -y > /dev/null
+    #printf '    * Installing packages: %s\n' "$PACKAGES_UBUNTU"
+    #$SUDOPE apt-get install --no-install-recommends $PACKAGES_UBUNTU -y > /dev/null 2>&1
+    #printf '    * Cleaning up\n'
+    #$SUDOPE apt-get autoremove -y > /dev/null && $SUDOPE apt-get clean -y > /dev/null
+
     printf '# Installing Ubuntu packages\n'
-    $SUDO apt-get update -y > /dev/null
-    printf "    * Adding universe, multiverse and restricted repositories\n"
-    $SUDO apt-get install software-properties-common -y > /dev/null 2>&1
-    $SUDO add-apt-repository -y universe multiverse restricted > /dev/null 2>&1
-    printf "    * Upgrading\n"
-    $SUDO apt-get upgrade -y > /dev/null
-    printf "    * Installing packages: $PACKAGES_UBUNTU\n"
-    $SUDO apt-get install $PACKAGES_UBUNTU -y > /dev/null 2>&1
-    printf "    * Cleaning up\n"
-    $SUDO apt-get autoremove -y > /dev/null
-    $SUDO apt-get clean -y > /dev/null
+    $SUDOPE apt-get update -y
+    printf '    * Adding universe, multiverse and restricted repositories\n'
+    $SUDOPE apt-get install --no-install-recommends software-properties-common -y
+    $SUDOPE add-apt-repository -y universe multiverse restricted
+    printf '    * Upgrading\n'
+    $SUDOPE apt-get upgrade -y
+    printf '    * Installing packages: %s\n' "$PACKAGES_UBUNTU"
+    $SUDOPE apt-get install --no-install-recommends $PACKAGES_UBUNTU -y
+    printf '    * Cleaning up\n'
+    $SUDOPE apt-get autoremove -y
 }
 
 setup_pkg_debian() {
-    printf 'debconf debconf/frontend select Noninteractive' | $SUDO debconf-set-selections
+    #export DEBIAN_FRONTEND=noninteractive
+
+    #printf '# Installing Debian packages\n'
+    #$SUDOPE apt-get update -y > /dev/null
+    #printf '    * Adding contrib and non-free repositories\n'
+    #$SUDOPE apt-get install --no-install-recommends software-properties-common -y > /dev/null 2>&1
+    #$SUDOPE add-apt-repository -y contrib > /dev/null 2>&1
+    #$SUDOPE add-apt-repository -y non-free > /dev/null 2>&1
+    #printf '    * Upgrading\n'
+    #$SUDOPE apt-get upgrade -y > /dev/null
+    #printf '    * Installing packages: %s\n' "$PACKAGES_DEBIAN"
+    #$SUDOPE apt-get install --no-install-recommends $PACKAGES_DEBIAN -y > /dev/null 2>&1
+    #printf '    * Cleaning up\n'
+    #$SUDOPE apt-get autoremove -y > /dev/null
+    #$SUDOPE apt-get clean -y > /dev/null
 
     printf '# Installing Debian packages\n'
-    $SUDO apt-get update -y > /dev/null
-    printf "    * Adding contrib and non-free repositories\n"
-    $SUDO apt-get install software-properties-common -y > /dev/null 2>&1
-    $SUDO add-apt-repository -y contrib > /dev/null 2>&1
-    $SUDO add-apt-repository -y non-free > /dev/null 2>&1
-    printf "    * Upgrading\n"
-    $SUDO apt-get upgrade -y > /dev/null
-    printf "    * Installing packages: ${PACKAGES_DEBIAN}\n"
-    $SUDO apt-get install $PACKAGES_DEBIAN -y > /dev/null 2>&1
-    printf "    * Cleaning up\n"
-    $SUDO apt-get autoremove -y > /dev/null
-    $SUDO apt-get clean -y > /dev/null
+    $SUDOPE apt-get update -y
+    printf '    * Adding contrib and non-free repositories\n'
+    $SUDOPE apt-get install --no-install-recommends software-properties-common -y
+    $SUDOPE add-apt-repository -y contrib
+    $SUDOPE add-apt-repository -y non-free
+    printf '    * Upgrading\n'
+    $SUDOPE apt-get upgrade -y
+    printf '    * Installing packages: %s\n' "$PACKAGES_DEBIAN"
+    $SUDOPE apt-get install --no-install-recommends $PACKAGES_DEBIAN -y
+    printf '    * Cleaning up\n'
+    $SUDOPE apt-get autoremove -y
+    $SUDOPE apt-get clean -y
 }
 
 setup_pkg_alpine() {
     printf '* Installing Alpine packages\n'
+    printf '    * Adding community repository\n'
     $SUDO tee '/etc/apk/repositories' > /dev/null << EOF
 http://ftp.acc.umu.se/mirror/alpinelinux.org/v$(cut -d'.' -f1,2 /etc/alpine-release)/main/
 http://ftp.acc.umu.se/mirror/alpinelinux.org/v$(cut -d'.' -f1,2 /etc/alpine-release)/community/
 EOF
-    $SUDO apk update
-    $SUDO apk upgrade
-    $SUDO apk add -y $PACKAGES_ALPINE
+    printf '    * Upgrading\n'
+    $SUDO apk --no-cache upgrade > /dev/null 2>&1
+    printf '    * Installing packages: %s\n' "$PACKAGES_ALPINE"
+    $SUDO apk --no-cache add $PACKAGES_ALPINE > /dev/null 2>&1
 }
 
 setup_pkg() {

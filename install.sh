@@ -23,27 +23,47 @@ fi
 [ -z "$XDG_STATE_HOME" ]    && export XDG_STATE_HOME="${HOME}/.local/state"
 
 [ -z "$DOTFILES_REPO" ]      && export DOTFILES_REPO="Raiu/dotfiles"
-[ -z "$DOTFILES_REMOTE" ]    && export DOTFILES_REMOTE="https://github.com/${REPO}.git"
+[ -z "$DOTFILES_REMOTE" ]    && export DOTFILES_REMOTE="https://github.com/${DOTFILES_REPO}.git"
 [ -z "$DOTFILES_BRANCH" ]    && export DOTFILES_BRANCH="master"
 [ -z "$DOTFILES_LOCATION" ]  && export DOTFILES_LOCATION="${HOME}/.dotfiles"
 [ -z "$DOTBOT_DIR" ]         && export DOTBOT_DIR="${DOTFILES_LOCATION}/.dotbot"
 [ -z "$DOTBOT_BIN" ]         && export DOTBOT_BIN="${DOTBOT_DIR}/bin/dotbot"
 [ -z "$DOTBOT_CONFIG" ]      && export DOTBOT_CONFIG="${DOTFILES_LOCATION}/install.conf.yaml"
 
-#echo "DOTFILES_REPO: $DOTFILES_REPO"
-#echo "DOTFILES_REMOTE: $DOTFILES_REMOTE"
-#echo "DOTFILES_BRANCH: $DOTFILES_BRANCH"
-#echo "DOTFILES_LOCATION: $DOTFILES_LOCATION"
-#echo "DOTBOT_DIR: $DOTBOT_DIR"
-#echo "DOTBOT_BIN: $DOTBOT_BIN"
-#echo "DOTBOT_CONFIG: $DOTBOT_CONFIG"
-
 is_correct_repo() {
-    _dir=$1
-    _url=$2
+    _dir=$1; _url=$2
+
+    # Check if url is valid
+    ! GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code --heads "$_url" > /dev/null 2>&1 && \
+        _error "${_url} is not a valid git repo"
+
+    # Check git _dir for _url
     [ "$(git -C "$_dir" rev-parse --is-inside-work-tree 2>/dev/null)" = "true" ] && \
     [ "$(git -C "$_dir" config --get remote.origin.url)" = "$_url" ]
 }
+
+is_virt() {
+    _virt=""
+    if grep -q docker /proc/1/cgroup; then
+        _virt='docker'
+    elif [ -f /proc/sys/fs/binfmt_misc/WSLInterop ] || grep -qi Microsoft /proc/version; then
+        _virt='wsl'
+    elif [ -f /proc/user_beancounters ]; then
+        _virt='openvz'
+    elif [ -f /proc/xen/capabilities ] || [ -f /sys/hypervisor/uuid ]; then
+        _virt='xen'
+    elif [ -f /sys/devices/virtual/dmi/id/product_name ] && grep -qi "VMware" /sys/devices/virtual/dmi/id/product_name; then
+        _virt='vmware'
+    elif [ -f /sys/devices/virtual/dmi/id/product_name ] && grep -qi "VirtualBox" /sys/devices/virtual/dmi/id/product_name; then
+        _virt='vbox'
+    elif uname -a | grep -q "hypervisor\|virtual\|vmware\|qemu\|xen"; then
+        _virt='vm'
+    else
+        _virt='none'
+    fi
+    printf '%S' $_virt
+}
+
 
 clone_dotfiles() {
     if [ -d "$DOTFILES_LOCATION" ]; then
@@ -69,6 +89,7 @@ setup() {
 }
 
 main() {
+    clone_dotfiles
     run_dotbot "${@}"
     setup 'pkg' # Install packages
     setup 'zsh'
