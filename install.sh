@@ -30,10 +30,16 @@ fi
 
 is_correct_repo() {
     _dir=$1; _url=$2
-    ! GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code --heads "$_url" > /dev/null 2>&1 && \
-            _error "${_url} is not a valid git repo"
+    printf 'DIR: %s\nURL: %s\n' $_dir $_url
+    ( cd '/tmp' && ! GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code --heads "$_url" > /dev/null 2>&1 && \
+            _error "${_url} is not a valid git repo" )
+
+    printf 'REV-PARSE: %s\n' "$(git -C "$_dir" rev-parse --is-inside-work-tree 2>/dev/null)"
+    printf 'remote: %s\n' "$(git -C "$_dir" config --get remote.origin.url)"
+    _url="${_url%.git}"
+    echo "Remove .git: ${_url%.git}"
     [ "$(git -C "$_dir" rev-parse --is-inside-work-tree 2>/dev/null)" = "true" ] && \
-    [ "$(git -C "$_dir" config --get remote.origin.url)" = "$_url" ]
+            ( echo "$(git -C "$_dir" config --get remote.origin.url)" | grep -qE "^${_url}(\.git)?$" )
 }
 
 clone_dotfiles() {
