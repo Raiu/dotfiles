@@ -3,27 +3,29 @@
         "dockerfile": "Dockerfile"
     },
     "features": {
-        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
     "customizations": {
-	    "vscode": {
-		    "settings": {
+        "vscode": {
+            "extensions": [
+                "VisualStudioExptTeam.vscodeintellicode",
+                "Equinusocio.vsc-material-theme",
+                "Equinusocio.vsc-material-theme-icons",
+                "timonwong.shellcheck",
+                "foxundermoon.shell-format"
+            ],
+            "settings": {
                 "editor.fontFamily": "Consolas, 'Courier New', monospace",
+                "git.autofetch": true,
+                "git.confirmSync": false,
+                "git.enableSmartCommit": true,
                 "keyboard.layout": "0000041D",
-                "workbench.colorTheme": "Material Theme Darker High Contrast",
-                "workbench.iconTheme": "eq-material-theme-icons-darker",
                 "materialTheme.accent": "Red",
                 "terminal.integrated.defaultProfile.linux": "zsh",
                 "terminal.integrated.fontSize": 16,
-                "git.confirmSync": false,
-                "git.autofetch": true,
-                "git.enableSmartCommit": true,
-            },
-			"extensions": [
-				"VisualStudioExptTeam.vscodeintellicode",
-				"Equinusocio.vsc-material-theme",
-				"Equinusocio.vsc-material-theme-icons"
-			]
-		}
-	}
+                "workbench.colorTheme": "Material Theme Darker High Contrast",
+                "workbench.iconTheme": "eq-material-theme-icons-darker"
+            }
+        }
+    },
 }

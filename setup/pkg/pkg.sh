@@ -1,64 +1,85 @@
 #!/usr/bin/env sh
 
 _exist()    { command -v "$@" >/dev/null 2>&1; }
-_error()    { printf 'ERROR: %s\n' "$1"; exit 1; }
-_warn()     { printf 'WARNING: %s\n' "$1"; }
+_error()    { printf '\nERROR: %s\n' "$1"; exit 1; }
+_warn()     { printf '\nWARNING: %s\n' "$1"; }
 
-SUDO=""
-SUDO_APT=""
+SUDO=''
 if [ "$(id -u)" -ne 0 ]; then
-    if _exist "sudo"; then
-        SUDO="$(command -v sudo)"
-        SUDO_APT="$(command -v sudo) DEBIAN_FRONTEND=noninteractive"
-    else
-        _error 'Please run as root or install sudo'
-    fi
+    ! _exist 'sudo' && _error 'sudo is not installed'
+    SUDO=$(command -v 'sudo')
+    $SUDO -n false 2>/dev/null && _error 'user does not have sudo permissions'
 fi
 
+DEBFE="DEBIAN_FRONTEND=noninteractive"
 BASEDIR="$(cd "$(dirname "${0}")" && pwd)"
 
-get_distro() {
+_get_distro() {
     [ ! -f '/etc/os-release' ] && _error '/etc/os-release does not exist.'
     _distro=$(grep "^ID=" /etc/os-release | cut -d= -f2 | awk '{print tolower($0)}')
     [ -z "$_distro" ] && _error 'ID field not found in /etc/os-release.'
     printf '%s' "$_distro"
 }
 
-get_packages() {
-    _dist=$1
-    package_file="${BASEDIR}/list.pkg.${_dist}"
-    if [ -f "$package_file" ]; then
-        packages=$(awk '{print}' ORS=' ' "$package_file")
-    else
-        _error "Cannot find ${package_file}"
-    fi   
+_get_package_file() { 
+    printf '%s/list.pkg.%s' "$BASEDIR" "$1"
+}
+#_get_packages() { "$(awk '{print}' ORS=' ' "$1")" ; }
+
+_get_packages() {
+    file=$1
+    packages=""
+    while IFS= read -r package; do
+        packages="$packages $package"
+    done < "$file"
+    printf '%s' "$packages"
 }
 
 install_pkg_ubuntu() {
-    packages="$(get_packages 'ubuntu')"
-    $SUDO apt-get update -qq > /dev/null
-    $SUDO apt-get upgrade -qq > /dev/null
-    $SUDO apt-get install $packages -qq
-    $SUDO apt-get autoremove -qq > /dev/null
-    $SUDO apt-get clean -qq > /dev/null
+    _pkg_file="$(_get_package_file 'debian')"
+    [ ! -f "$_pkg_file" ] && _error "can not find ${_pkg_file}"
+    _packages="$(_get_packages "$_pkg_file")"
+
+    printf '# Installing Ubuntu packages\n'
+    $SUDO $DEBFE apt-get update -y > /dev/null
+    printf '    * Upgrading\n'
+    $SUDO $DEBFE apt-get upgrade -y > /dev/null
+    printf '    * Installing _packages: %s\n' "$_packages"
+    $SUDO $DEBFE apt-get install $_packages -y > /dev/null 2>&1
+    printf '    * Cleaning up\n'
+    $SUDO $DEBFE apt-get autoremove -y > /dev/null
+    $SUDO $DEBFE apt-get clean -y > /dev/null
 }
 
 install_pkg_debian() {
-    packages="$(get_packages 'debian')"
-    $SUDO apt-get update -qq > /dev/null
-    $SUDO apt-get upgrade -qq > /dev/null
-    $SUDO apt-get install $packages -qq
-    $SUDO apt-get autoremove -qq > /dev/null
-    $SUDO apt-get clean -qq > /dev/null
+    _pkg_file="$(_get_package_file 'debian')"
+    [ ! -f "$_pkg_file" ] && _error "can not find ${_pkg_file}"
+    _packages="$(_get_packages "$_pkg_file")"
+    
+    printf '# Installing Debian packages\n'
+    printf '    * Upgrading\n'
+    $SUDO $DEBFE apt-get update -y > /dev/null
+    $SUDO $DEBFE apt-get upgrade -y > /dev/null
+    printf '    * Installing _packages: %s\n' "$_packages"
+    $SUDO $DEBFE apt-get install $_packages -y > /dev/null 2>&1
+    printf '    * Cleaning up\n'
+    $SUDO $DEBFE apt-get autoremove -y > /dev/null
+    $SUDO $DEBFE apt-get clean -y > /dev/null
 }
 
 install_pkg_alpine() {
-    apk update
-    apk upgrade
-    apk add -y $PACKAGES_ALPINE
+    _pkg_file="$(_get_package_file 'alpine')"
+    [ ! -f "$_pkg_file" ] && _error "can not find ${_pkg_file}"
+    _packages="$(_get_packages "$_pkg_file")"
+
+    printf '# Installing Alpine packages\n'
+    printf '    * Upgrading\n'
+    $SUDO apk --no-cache upgrade > /dev/null 2>&1
+    printf '    * Installing packages: %s\n' "$_packages"
+    $SUDO apk --no-cache add $_packages
 }
 
-distro=$(get_distro)
+distro=$(_get_distro)
 case "${distro}" in
     'ubuntu')
         install_pkg_ubuntu

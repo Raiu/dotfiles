@@ -13,18 +13,14 @@ INSTALL_SH="${DOTFILES_LOCATION}/install.sh"
 
 is_correct_repo() {
     _dir=$1; _url=$2
-
-    # Check if url is valid
     ! GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code --heads "$_url" > /dev/null 2>&1 && \
-        _error "${_url} is not a valid git repo"
-
-    # Check git _dir for _url
+            _error "${_url} is not a valid git repo"
     [ "$(git -C "$_dir" rev-parse --is-inside-work-tree 2>/dev/null)" = "true" ] && \
     [ "$(git -C "$_dir" config --get remote.origin.url)" = "$_url" ]
 }
 
-if [ -f "${PRIME_SH}" ]; then
-    sh "${PRIME_SH}" || _error 'prime.sh failed'
+if [ -f "$PRIME_SH" ]; then
+    sh "$PRIME_SH" || _error 'prime.sh failed'
 else
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/Raiu/dotfiles/main/prime.sh)" || \
         _error 'remote prime.sh failed'
@@ -43,8 +39,8 @@ else
 fi
 
 # Run install found inside dotfiles
-if [ -f "${INSTALL_SH}" ]; then
-    sh "${INSTALL_SH}" || _error 'install.sh failed'
+if [ -f "$INSTALL_SH" ]; then
+    sh "$INSTALL_SH" || _error 'install.sh failed'
 else
     _error "Cannot find ${INSTALL_SH}"
 fi
