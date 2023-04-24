@@ -4,13 +4,21 @@
 
 - clean: ["~"]
 
+- create:
+  - ~/.config/vim
+  - ~/.config/zsh
+  - ~/.local/share/fonts
+
 - link:
-    ~/.config/vim/vimrc:
-      create: true
-      path: vim/vimrc
-    ~/.config/zsh/.zshrc:
-      create: true
-      path: zsh/.zshrc
+    ~/.config/vim/vimrc: vim/vimrc
+    ~/.config/zsh/.zshrc: zsh/zshrc
+    ~/.config/zsh/zsh.export: zsh/zsh.export
+    ~/.config/zsh/zsh.zstyles: zsh/zsh.zstyles
+    ~/.config/zsh/zsh.alias: zsh/zsh.alias
+    ~/.config/zsh/zsh.plugins.txt: zsh/zsh.plugins.txt
+    ~/.zshenv:
+      if: '! grep -q "XDG_CONFIG_HOME" /etc/zsh/zshenv'
+      path: zsh/zshenv
     ~/.local/share/fonts/:
       create: true
       glob: true

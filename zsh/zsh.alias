@@ -1,0 +1,60 @@
+
+# DIR
+alias -g ...='../..'
+alias -g ....='../../..'
+alias -g .....='../../../..'
+alias -g ......='../../../../..'
+
+alias -- -='cd -'
+alias 1='cd -1'
+alias 2='cd -2'
+alias 3='cd -3'
+alias 4='cd -4'
+alias 5='cd -5'
+alias 6='cd -6'
+alias 7='cd -7'
+alias 8='cd -8'
+alias 9='cd -9'
+
+alias md='mkdir -p'
+alias rd=rmdir
+
+# GREP
+alias egrep='grep -E --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
+alias fgrep='grep -F --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
+
+
+
+# some distro name bat as batcat
+_exist "batcat" && alias bat="batcat"
+
+# use exa
+if _exist "exa"; then
+    alias ls='exa --icons --group-directories-first'
+    alias lsa='exa -a --icons --group-directories-first'
+    alias lt='exa -T --group-directories-first --icons --git'
+    alias lta='exa -Ta --group-directories-first --icons --git'
+    alias ll='exa -lmhg@ --group-directories-first --color-scale --icons --git'
+    alias la='exa -lamhg@ --group-directories-first --color-scale --icons --git'
+    alias lx='exa -lbhHigUmuSa@ --group-directories-first --color-scale --icons --git --time-style=long-iso'
+else
+    alias ls='LC_COLLATE=C ls -h --group-directories-first --color=auto'
+    alias lsa='LC_COLLATE=C ls -Ah --group-directories-first --color=auto'
+    alias ll='LC_COLLATE=C ls -lh --group-directories-first --color=auto'
+    alias la='LC_COLLATE=C ls -lAh --group-directories-first --color=auto'
+fi
+
+if _exist "docker"; then
+    alias dc='docker compose'
+    alias dcd='docker compose down'
+    alias dcs='docker compose up -d'
+    alias dcr='docker compose restart'
+    alias dcu='docker compose down && docker compose pull && docker compose up -d'
+fi
+
+alias screen='screen -e^tt'
+alias wget='wget --hsts-file $XDG_CACHE_HOME/wget/wget-hsts'
+
+alias zre='source "${ZDOTDIR}/.zshrc"'
+alias zed='vim "${ZDOTDIR}/.zshrc"'
+alias ved='vim "${XDG_CONFIG_HOME}/vim/vimrc"'

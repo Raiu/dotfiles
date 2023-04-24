@@ -13,66 +13,139 @@ if [ "$(id -u)" -ne 0 ]; then
     $SUDO -n false 2>/dev/null && _error 'user does not have sudo permissions'
 fi
 
-DEBFE="DEBIAN_FRONTEND=noninteractive"
+if [ -z "${REALUSER:-}" ]; then
+    if [ -n "${SUDO_USER:-}" ]; then
+        export REALUSER="${SUDO_USER}"
+    else
+        REALUSER="$(whoami)"
+        export REALUSER
+    fi
+fi
+
+DEBNI="DEBIAN_FRONTEND=noninteractive"
+NOREC="--no-install-recommends"
+NOCACHE="--no-cache"
 
 # Packages
-PACKAGES_UBUNTU="ssh curl wget sudo bash zsh git vim locales ca-certificates gnupg"
-PACKAGES_DEBIAN="ssh curl wget sudo bash zsh git vim locales ca-certificates gnupg"
-PACKAGES_ALPINE="dropbear curl wget sudo bash zsh git vim shadow"
+PACKAGES_UBUNTU="dialog readline-common apt-utils ssh curl wget sudo bash zsh \
+git vim locales ca-certificates gnupg python3-minimal"
+PACKAGES_DEBIAN="dialog readline-common apt-utils ssh curl wget sudo bash zsh \
+git vim locales ca-certificates gnupg python3"
+PACKAGES_ALPINE="dropbear tzdata curl wget sudo bash zsh git vim shadow musl \
+musl-utils musl-locales python3"
 
+#REPO_URL='https://github.com/Raiu/dotfiles'
+REPO_URL_RAW='https://raw.githubusercontent.com/Raiu/dotfiles/main'
+DOTFILES_DIR="${HOME}/.dotfiles"
 
 # Helpers
 ###
 get_distro() {
-    [ ! -f '/etc/os-release' ] && _error '/etc/os-release does not exist.'
+    [ ! -f "/etc/os-release" ] && _error "/etc/os-release does not exist."
     distro_id=$(grep "^ID=" /etc/os-release | cut -d= -f2 | awk '{print tolower($0)}')
     [ -z "$distro_id" ] && _error 'ID field not found in /etc/os-release.'
-
     printf '%s' "$distro_id"
 }
 
+#
+###
 setup_pkg_ubuntu() {
     printf '# Installing Ubuntu packages\n'
-    $SUDO $DEBFE apt-get update -y > /dev/null
-    printf '    * Adding universe, multiverse and restricted repositories\n'
-    $SUDO $DEBFE apt-get install --no-install-recommends software-properties-common -y > /dev/null 2>&1
-    $SUDO $DEBFE add-apt-repository -y universe multiverse restricted > /dev/null 2>&1
+
+    # Fix repos
+    printf '    * Updating repositories\n'
+    if [ -f "${DOTFILES_DIR}/scripts/update_repo_ubuntu.sh" ] ; then
+        printf '        -> with local\n'
+        $SUDO sh "${DOTFILES_DIR}/scripts/update_repo_ubuntu.sh"
+        $SUDO $DEBNI apt-get update -y > /dev/null
+    
+    elif    script_file=$(mktemp) ; \
+            curl -fsSL "${REPO_URL_RAW}/scripts/update_repo_ubuntu.sh" \
+            -o "${script_file}" ; then
+        printf '        -> with remote\n'
+        $SUDO sh "${script_file}"
+        rm "${script_file}"
+        $SUDO $DEBNI apt-get update -y > /dev/null 
+    else
+        printf '        -> with apt\n'
+        $SUDO $DEBNI apt-get update -y > /dev/null
+        $SUDO $DEBNI apt-get install $NOREC software-properties-common -y > /dev/null 2>&1
+        $SUDO $DEBNI add-apt-repository universe multiverse restricted -y > /dev/null 2>&1
+    fi
+
+
     printf '    * Upgrading\n'
-    $SUDO $DEBFE apt-get upgrade -y > /dev/null
+    $SUDO $DEBNI apt-get upgrade -y > /dev/null
+  
     printf '    * Installing packages: %s\n' "$PACKAGES_UBUNTU"
-    $SUDO $DEBFE apt-get install --no-install-recommends $PACKAGES_UBUNTU -y > /dev/null 2>&1
+    $SUDO $DEBNI apt-get install $NOREC $PACKAGES_UBUNTU -y > /dev/null 2>&1
+  
     printf '    * Cleaning up\n'
-    $SUDO $DEBFE apt-get autoremove -y > /dev/null
-    $SUDO $DEBFE apt-get clean -y > /dev/null
+    $SUDO $DEBNI apt-get autoremove -y > /dev/null
+    $SUDO $DEBNI apt-get clean -y > /dev/null
 }
 
 setup_pkg_debian() {
     printf '# Installing Debian packages\n'
-    $SUDO $DEBFE apt-get update -y > /dev/null
-    printf '    * Adding contrib and non-free repositories\n'
-    $SUDO $DEBFE apt-get install --no-install-recommends software-properties-common -y > /dev/null 2>&1
-    $SUDO $DEBFE add-apt-repository -y contrib > /dev/null 2>&1
-    $SUDO $DEBFE add-apt-repository -y non-free > /dev/null 2>&1
+    
+    # Fix repos
+    printf '    * Updating repositories\n'
+    if [ -f "${DOTFILES_DIR}/scripts/update_repo_debian.sh" ] ; then
+        printf '        -> with local\n'
+        $SUDO sh "${DOTFILES_DIR}/scripts/update_repo_debian.sh"
+        $SUDO $DEBNI apt-get update -y > /dev/null
+    
+    elif    script_file=$(mktemp) ; \
+            curl -fsSL "${REPO_URL_RAW}/scripts/update_repo_debian.sh" \
+            -o "${script_file}" ; then 
+        printf '        -> with remote\n'
+        $SUDO sh "${script_file}"
+        rm "${script_file}"
+        $SUDO $DEBNI apt-get update -y > /dev/null  
+    else
+        printf '        -> with apt\n'
+        $SUDO $DEBNI apt-get update -y > /dev/null
+        $SUDO $DEBNI apt-get install $NOREC software-properties-common -y > /dev/null 2>&1
+        $SUDO $DEBNI add-apt-repository contrib -y > /dev/null 2>&1
+        $SUDO $DEBNI add-apt-repository non-free -y > /dev/null 2>&1
+    fi
+    
+
     printf '    * Upgrading\n'
-    $SUDO $DEBFE apt-get upgrade -y > /dev/null
+    $SUDO $DEBNI apt-get upgrade -y > /dev/null
+    
     printf '    * Installing packages: %s\n' "$PACKAGES_DEBIAN"
-    $SUDO $DEBFE apt-get install --no-install-recommends $PACKAGES_DEBIAN -y > /dev/null 2>&1
+    $SUDO $DEBNI apt-get install $NOREC $PACKAGES_DEBIAN -y > /dev/null 2>&1
+    
     printf '    * Cleaning up\n'
-    $SUDO $DEBFE apt-get autoremove -y > /dev/null
-    $SUDO $DEBFE apt-get clean -y > /dev/null
+    $SUDO $DEBNI apt-get autoremove -y > /dev/null
+    $SUDO $DEBNI apt-get clean -y > /dev/null
 }
 
 setup_pkg_alpine() {
     printf '# Installing Alpine packages\n'
-    printf '    * Adding community repository\n'
-    $SUDO tee '/etc/apk/repositories' > /dev/null << EOF
-http://ftp.acc.umu.se/mirror/alpinelinux.org/v$(cut -d'.' -f1,2 /etc/alpine-release)/main/
-http://ftp.acc.umu.se/mirror/alpinelinux.org/v$(cut -d'.' -f1,2 /etc/alpine-release)/community/
-EOF
+
+    # Fix repos
+    printf '    * Updating repositories\n'
+    if [ -f "${DOTFILES_DIR}/scripts/update_repo_alpine.sh" ] ; then
+        printf '        -> with local\n'
+        $SUDO sh "${DOTFILES_DIR}/scripts/update_repo_alpine.sh"
+    
+    elif    script_file=$(mktemp) ; \
+            curl -fsSL "${REPO_URL_RAW}/scripts/update_repo_alpine.sh" \
+            -o "${script_file}"
+        then 
+        printf '        -> with remote\n'
+        $SUDO sh "${script_file}"
+        rm "${script_file}"
+    fi
+
+
     printf '    * Upgrading\n'
-    $SUDO apk --no-cache upgrade > /dev/null 2>&1
+    $SUDO apk $NOCACHE upgrade > /dev/null 2>&1
+
     printf '    * Installing packages: %s\n' "$PACKAGES_ALPINE"
-    $SUDO apk --no-cache add $PACKAGES_ALPINE > /dev/null 2>&1
+    $SUDO apk $NOCACHE add $PACKAGES_ALPINE > /dev/null 2>&1
 }
 
 setup_pkg() {
@@ -96,6 +169,7 @@ setup_pkg() {
 setup_zsh() {
     printf '# Configuring ZSH\n'
     $SUDO mkdir -p '/etc/zsh'
+    
     $SUDO tee '/etc/zsh/zshenv' > /dev/null << 'EOF'
 if [[ -z "$PATH" || "$PATH" == "/bin:/usr/bin" ]]
 then
@@ -112,6 +186,9 @@ export XDG_CONFIG_DIRS="/etc/xdg"
 
 # ZSH
 export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
+EOF
+    
+    $SUDO tee -a '/etc/zsh/zshenv' > /dev/null << 'EOF'
 
 # Locales
 export LANG="en_GB.UTF-8"
@@ -135,13 +212,14 @@ EOF
 setup_xdg_dir() {
     printf '# Creating XDG directories\n'
     printf '    * root\n'
-    $SUDO mkdir -p '/root/.cache' '/root/.config' '/root/.local/share' '/root/.local/state'
-    $SUDO chown root:root '/root/.cache' '/root/.config' '/root/.local'
+    $SUDO install -d -m 700 -o root -g root /root/.cache /root/.config \
+      /root/.local/share /root/.local/state
     for user_home in /home/*; do
         username=$(basename "$user_home")
         printf '    * %s\n' "$username"
-        $SUDO mkdir -p "$user_home/.cache" "$user_home/.config" "$user_home/.local/bin" "$user_home/.local/state" "$user_home/.local/share"
-        $SUDO chown -R "$username:$username" "$user_home/.cache" "$user_home/.config" "$user_home/.local"
+        $SUDO install -d -m 700 -o "$username" -g "$username" "${user_home}/.cache" \
+          "${user_home}/.config" "${user_home}/.local/bin" "${user_home}/.local/state" \
+          "${user_home}/.local/share"
     done
 }
 
@@ -161,18 +239,25 @@ BACKSPACE="guess"
 EOF
 }
 
+setup_locales_alpine() {
+    zone_file="/usr/share/zoneinfo/Europe/Stockholm"
+    if [ -f "$zone_file" ] ; then
+        $SUDO cp "$zone_file" "/etc/localtime"
+    fi
+    echo "Europe/Stockholm" | $SUDO tee "/etc/timezone" > /dev/null
+}
+
 setup_locales() {
     printf '# Configuring Locales\n'
     _distro=$1
     case "$_distro" in
         "debian")
-            setup_locales_deb
-            ;;
+            setup_locales_deb ;;
         "ubuntu")
-            setup_locales_deb
-            ;;
-        *)
-            ;;
+            setup_locales_deb ;;
+        "alpine")
+            setup_locales_alpine ;;
+        *) ;;
     esac
 }
 
@@ -183,7 +268,8 @@ DISTRO="$(get_distro)"
 setup_pkg "$DISTRO"
 setup_xdg_dir
 setup_locales "$DISTRO"
-setup_zsh
+setup_zsh "$DISTRO"
 
-printf '\n###\n# Finished.\n'
-printf '\n'
+printf '\n###\n# Finished.\n\n'
+
+exit 0

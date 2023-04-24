@@ -1,0 +1,5 @@
+# COMPLETION
+zstyle ':completion:*' cache-path "${XDG_CACHE_HOME}/zsh/zcompcache"
+
+# ANTIDOTE
+zstyle ':antidote:bundle' use-friendly-names 'yes'

@@ -1,11 +1,13 @@
 #!/usr/bin/env sh
 
+set -eu
+
 _exist() { command -v "$@" >/dev/null 2>&1 ; }
 _error() { printf '\nERROR: %s\n' "$1" ; rm "$TMP_FILE" >/dev/null 2>&1 ; exit 1 ; }
 _warn()  { printf '\nWARNING: %s\n' "$1" ; }
 
-if ! grep -qiE '^ID=debian' /etc/os-release >/dev/null 2>&1; then
-    _error 'This script is intended to run on Debian only.'
+if ! grep -qiE '^ID=alpine' /etc/os-release >/dev/null 2>&1; then
+    _error 'This script is intended to run on Alpine Linux only.'
 fi
 
 SUDO=''
@@ -20,7 +22,7 @@ fi
 show_help() {
     cat <<EOF
 Usage: $(basename "$0") [-m MIRRORS] [-r REPOS]
-Update the apt repositories in Debian.
+Update the apk repositories in Alpine Linux.
 
 Optional arguments:
   -m MIRRORS  Specify a comma-separated list of mirrors to use.
@@ -30,15 +32,14 @@ Optional arguments:
 EOF
 }
 
-MIRRORS="http://ftp.acc.umu.se/debian
-http://ftp.uio.no/debian
-http://mirror.asergo.com/debian
-http://ftp.fi.debian.org/debian
-http://debian.mirror.su.se/debian
-http://ftp.debian.org/debian
-http://deb.debian.org/debian"
-REPOS="main contrib non-free"
-APT_FILE='/etc/apt/sources.list'
+MIRRORS="
+http://ftp.acc.umu.se/mirror/alpinelinux.org
+http://ftp.lysator.liu.se/pub/alpine
+http://alpine.mirror.far.fi
+http://mirrors.edge.kernel.org/alpine
+http://dl-cdn.alpinelinux.org/alpine"
+REPOS="main community"
+APK_FILE='/etc/apk/repositories'
 DRYRUN="false"
 
 while getopts "m:r:nh" opt ; do
@@ -51,27 +52,18 @@ while getopts "m:r:nh" opt ; do
     esac
 done
 
-CODENAME=$(grep VERSION_CODENAME /etc/os-release | cut -d= -f2 | tr '[:upper:]' '[:lower:]')
+CODENAME="v$(cut -d'.' -f1,2 /etc/alpine-release)"
 
 for MIRROR in $MIRRORS ; do
-    if curl --head --silent --fail "${MIRROR}/dists/${CODENAME}/Release" >/dev/null ; then
+    if curl --head --silent --fail "${MIRROR}/${CODENAME}/main" >/dev/null ; then
         break
     fi
 done
 
 TMP_FILE=$(mktemp)
-cat <<EOF >"$TMP_FILE"
-deb $MIRROR $CODENAME $REPOS
-deb $MIRROR $CODENAME-updates $REPOS
-deb $MIRROR $CODENAME-backports $REPOS
-deb http://deb.debian.org/debian-security $CODENAME-security $REPOS
-
-# Uncomment lines below to enable source packages
-#deb-src $MIRROR $CODENAME $REPOS
-#deb-src $MIRROR $CODENAME-updates $REPOS
-#deb-src $MIRROR $CODENAME-backports $REPOS
-#deb-src http://deb.debian.org/debian-security $CODENAME-security $REPOS
-EOF
+for REPO in $(echo "$REPOS" | tr ' ' '\n') ; do
+    printf '%s/%s/%s\n' "$MIRROR" "$CODENAME" "$REPO" >>"$TMP_FILE"
+done
 
 if [ $DRYRUN = 'true' ] ; then
     cat "$TMP_FILE"
@@ -79,13 +71,12 @@ if [ $DRYRUN = 'true' ] ; then
     exit 0
 fi
 
-[ ! -f "$APT_FILE" ] && _error "${APT_FILE} does not exist."
-$SUDO cp "$APT_FILE" "${APT_FILE}.bak"
+[ ! -f "$APK_FILE" ] && _error "${APK_FILE} does not exist."
+$SUDO cp "$APK_FILE" "${APK_FILE}.bak"
 
-$SUDO mv "$TMP_FILE" "$APT_FILE" || _error "failed writing to ${APT_FILE}"
+$SUDO mv "$TMP_FILE" "$APK_FILE" || _error "failed writing to ${APK_FILE}"
+$SUDO chmod 644 "$APK_FILE"
 
-if [ -f "$TMP_FILE" ] ; then
+if [ -f "$TMP_FILE" ]; then
     rm "$TMP_FILE" >/dev/null 2>&1 || _warn "failed to remove ${TMP_FILE}"
 fi
-
-exit 0

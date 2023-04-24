@@ -11,18 +11,29 @@ DOTFILES_LOCATION=${DOTFILES_LOCATION:-"${HOME}/.dotfiles"}
 PRIME_SH="${DOTFILES_LOCATION}/prime.sh"
 INSTALL_SH="${DOTFILES_LOCATION}/install.sh"
 
+if [ -z "${REALUSER:-}" ]; then
+    if [ -n "${SUDO_USER:-}" ]; then
+        export REALUSER="${SUDO_USER}"
+    else
+        REALUSER="$(whoami)"
+        export REALUSER
+    fi
+fi
+
 is_correct_repo() {
-    _dir=$1; _url=$2
-    ! GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code --heads "$_url" > /dev/null 2>&1 && \
-            _error "${_url} is not a valid git repo"
-    [ "$(git -C "$_dir" rev-parse --is-inside-work-tree 2>/dev/null)" = "true" ] && \
-    [ "$(git -C "$_dir" config --get remote.origin.url)" = "$_url" ]
+    dir=$1
+    url=$2
+    GIT_TERMINAL_PROMPT=0 git -C "/tmp" ls-remote --exit-code --heads "$url" \
+        >/dev/null 2>&1 || return 1
+    url="${url%.git}"
+    [ "$(git -C "$dir" rev-parse --is-inside-work-tree 2>/dev/null)" = "true" ] &&
+           git -C "$dir" config --get remote.origin.url | grep -qE "^${url}"
 }
 
 if [ -f "$PRIME_SH" ]; then
     sh "$PRIME_SH" || _error 'prime.sh failed'
 else
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/Raiu/dotfiles/main/prime.sh)" || \
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/Raiu/dotfiles/main/prime.sh)" ||
         _error 'remote prime.sh failed'
 fi
 
@@ -33,9 +44,9 @@ if [ -d "$DOTFILES_LOCATION" ]; then
         _error "${DOTFILES_LOCATION} already exists and it doesnt contain our repo."
     fi
 else
-    # Clone it
     ! _exist 'git' && _error 'install git'
-    git clone "$DOTFILES_REMOTE" "$DOTFILES_LOCATION" || _error 'Failed to clone repo'
+    git clone "$DOTFILES_REMOTE" "$DOTFILES_LOCATION" --recursive || 
+      _error 'Failed to clone repo'
 fi
 
 # Run install found inside dotfiles
@@ -44,3 +55,5 @@ if [ -f "$INSTALL_SH" ]; then
 else
     _error "Cannot find ${INSTALL_SH}"
 fi
+
+exit 0

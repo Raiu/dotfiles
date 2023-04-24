@@ -11,10 +11,11 @@ _warn()     { printf 'WARNING: %s\n' "$1"; }
 [ -z "$MYVIMRC" ]   && export MYVIMRC="$VIMDIR/vimrc"
 
 if [ ! -d "$VIMDIR/bundle/Vundle.vim" ]; then
-    git clone "https://github.com/VundleVim/Vundle.vim.git" "$VIMDIR/bundle/Vundle.vim"
+    git clone --quiet "https://github.com/VundleVim/Vundle.vim.git" \
+      "$VIMDIR/bundle/Vundle.vim" > /dev/null
 fi
 
-if [ -f $MYVIMRC ]; then 
+if [ -f "$MYVIMRC" ]; then 
     vim -c PluginInstall -c qall
 else
     printf 'Can not find %s\nSkip PluginInstall. Run it manually' "$MYVIMRC"

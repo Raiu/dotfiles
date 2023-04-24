@@ -6,8 +6,8 @@ _exist() { command -v "$@" >/dev/null 2>&1 ; }
 _error() { printf '\nERROR: %s\n' "$1" ; rm "$TMP_FILE" >/dev/null 2>&1 ; exit 1 ; }
 _warn()  { printf '\nWARNING: %s\n' "$1" ; }
 
-if ! grep -qiE '^ID=alpine' /etc/os-release >/dev/null 2>&1; then
-    _error 'This script is intended to run on Alpine Linux only.'
+if ! grep -qiE '^ID=ubuntu' /etc/os-release >/dev/null 2>&1; then
+    _error 'This script is intended to run on Ubuntu only.'
 fi
 
 SUDO=''
@@ -22,7 +22,7 @@ fi
 show_help() {
     cat <<EOF
 Usage: $(basename "$0") [-m MIRRORS] [-r REPOS]
-Update the apk repositories in Alpine Linux.
+Update the apt repositories in Ubuntu.
 
 Optional arguments:
   -m MIRRORS  Specify a comma-separated list of mirrors to use.
@@ -32,13 +32,15 @@ Optional arguments:
 EOF
 }
 
-MIRRORS="http://ftp.acc.umu.se/mirror/alpinelinux.org
-http://ftp.lysator.liu.se/pub/alpine
-http://alpine.mirror.far.fi
-http://mirrors.edge.kernel.org/alpine
-http://dl-cdn.alpinelinux.org/alpine"
-REPOS="main community"
-APK_FILE='/etc/apk/repositories'
+MIRRORS="
+http://ftp.acc.umu.se/ubuntu
+http://ftp.uninett.no/ubuntu
+https://mirror.asergo.com/ubuntu
+http://mirror.wtnet.de/ubuntu
+http://ftp.lysator.liu.se/ubuntu
+http://archive.ubuntu.com/ubuntu"
+REPOS="main restricted universe multiverse"
+APT_FILE='/etc/apt/sources.list'
 DRYRUN="false"
 
 while getopts "m:r:nh" opt ; do
@@ -51,18 +53,27 @@ while getopts "m:r:nh" opt ; do
     esac
 done
 
-CODENAME="v$(cut -d'.' -f1,2 /etc/alpine-release)"
+CODENAME=$(grep VERSION_CODENAME /etc/os-release | cut -d= -f2 | tr '[:upper:]' '[:lower:]')
 
 for MIRROR in $MIRRORS ; do
-    if curl --head --silent --fail "${MIRROR}/${CODENAME}/main" >/dev/null ; then
+    if curl --head --silent --fail "$MIRROR/dists/$CODENAME/Release" >/dev/null ; then
         break
     fi
 done
 
 TMP_FILE=$(mktemp)
-for REPO in $(echo "$REPOS" | tr ' ' '\n') ; do
-    printf '%s/%s/%s\n' "$MIRROR" "$CODENAME" "$REPO" >>"$TMP_FILE"
-done
+cat <<EOF >"$TMP_FILE"
+deb $MIRROR $CODENAME $REPOS
+deb $MIRROR $CODENAME-updates $REPOS
+deb $MIRROR $CODENAME-backports $REPOS
+deb $MIRROR $CODENAME-security $REPOS
+
+# Uncomment lines below to enable source packages
+#deb-src $MIRROR $CODENAME $REPOS
+#deb-src $MIRROR $CODENAME-updates $REPOS
+#deb-src $MIRROR $CODENAME-backports $REPOS
+#deb-src $MIRROR $CODENAME-security $REPOS
+EOF
 
 if [ $DRYRUN = 'true' ] ; then
     cat "$TMP_FILE"
@@ -70,13 +81,12 @@ if [ $DRYRUN = 'true' ] ; then
     exit 0
 fi
 
-[ ! -f "$APK_FILE" ] && _error "${APK_FILE} does not exist."
-$SUDO cp "$APK_FILE" "${APK_FILE}.bak"
+[ ! -f "$APT_FILE" ] && _error "${APT_FILE} does not exist."
+$SUDO cp "$APT_FILE" "${APT_FILE}.bak"
 
-$SUDO mv "$TMP_FILE" "$APK_FILE" || _error "failed writing to ${APK_FILE}"
+$SUDO mv "$TMP_FILE" "$APT_FILE" || _error "failed writing to ${APT_FILE}"
+$SUDO chmod 644 "$APT_FILE"
 
-if [ -f "$TMP_FILE" ]; then
+if [ -f "$TMP_FILE" ] ; then
     rm "$TMP_FILE" >/dev/null 2>&1 || _warn "failed to remove ${TMP_FILE}"
 fi
-
-exit 0

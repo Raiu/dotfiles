@@ -8,15 +8,20 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "VisualStudioExptTeam.vscodeintellicode",
-                "Equinusocio.vsc-material-theme",
-                "Equinusocio.vsc-material-theme-icons",
-                "timonwong.shellcheck",
-                "foxundermoon.shell-format"
-            ],
+				"VisualStudioExptTeam.vscodeintellicode",
+				"Equinusocio.vsc-material-theme",
+				"Equinusocio.vsc-material-theme-icons",
+				"timonwong.shellcheck",
+				"foxundermoon.shell-format",
+				"XadillaX.viml"
+			],
             "settings": {
-                "editor.fontFamily": "Consolas, 'Courier New', monospace",
+                "editor.fontFamily": "'JetBrainsMono NFM', 'Droid Sans Mono', Menlo, Monaco, Consolas, 'Courier New', monospace",
+                "editor.fontSize": 16,
+                "files.eol": "\n",
                 "git.autofetch": true,
+                "git.autoRepositoryDetection": false,
+                "git.detectSubmodules": false,
                 "git.confirmSync": false,
                 "git.enableSmartCommit": true,
                 "keyboard.layout": "0000041D",
@@ -24,7 +29,34 @@
                 "terminal.integrated.defaultProfile.linux": "zsh",
                 "terminal.integrated.fontSize": 16,
                 "workbench.colorTheme": "Material Theme Darker High Contrast",
-                "workbench.iconTheme": "eq-material-theme-icons-darker"
+                "workbench.iconTheme": "eq-material-theme-icons-darker",
+                "workbench.colorCustomizations": {
+                    "[Material Theme Darker High Contrast]": {
+                        "activityBar.activeBorder": "#84FFFF",
+                        "activityBarBadge.background": "#84FFFF",
+                        "breadcrumb.activeSelectionForeground": "#84FFFF",
+                        "editor.findMatchBorder": "#84FFFF",
+                        "editorSuggestWidget.highlightForeground": "#84FFFF",
+                        "editorWidget.border": "#84FFFF",
+                        "editorWidget.resizeBorder": "#84FFFF",
+                        "list.activeSelectionForeground": "#84FFFF",
+                        "list.highlightForeground": "#84FFFF",
+                        "list.inactiveSelectionForeground": "#84FFFF",
+                        "menu.selectionForeground": "#84FFFF",
+                        "menubar.selectionForeground": "#84FFFF",
+                        "notificationLink.foreground": "#84FFFF",
+                        "panelTitle.activeBorder": "#84FFFF",
+                        "pickerGroup.foreground": "#84FFFF",
+                        "progressBar.background": "#84FFFF",
+                        "scrollbarSlider.activeBackground": "#84FFFF50",
+                        "selection.background": "#84FFFF40",
+                        "settings.headerForeground": "#84FFFF",
+                        "settings.modifiedItemIndicator": "#84FFFF",
+                        "statusBarItem.remoteBackground": "#84FFFF",
+                        "tab.activeBorder": "#84FFFF",
+                        "textLink.foreground": "#84FFFF"
+                    }
+                },
             }
         }
     },
